@@ -1,0 +1,82 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+// 1. Enum cho Hệ thống (RBAC)
+enum SystemRole {
+  ADMIN    // Quản trị viên hệ thống (truy cập CMS, xem dashboard tổng, ban user)
+  USER     // Người dùng tải app bình thường
+}
+
+// 2. Enum cho Ngữ cảnh Gia đình
+enum FamilyRole {
+  OWNER    // Chủ nhà: Toàn quyền trong 1 Family cụ thể
+  MEMBER   // Thành viên: Quyền hạn chế (chỉ nhập chỉ số của mình)
+}
+
+// 3. Enum trạng thái duyệt thành viên
+enum JoinStatus {
+  PENDING  // Chờ chủ nhà duyệt
+  APPROVED // Đã được duyệt
+  REJECTED // Bị từ chối
+}
+
+model User {
+  id            String         @id @default(uuid())
+  full_name     String         @db.VarChar(255)
+  phone         String         @unique @db.VarChar(20)
+  email         String?        @unique @db.VarChar(255)
+  password_hash String         @db.Text
+  
+  // Tích hợp RBAC hệ thống ở đây
+  system_role   SystemRole     @default(USER) 
+  is_active     Boolean        @default(true) // Admin có thể ban user bằng cờ này
+  
+  created_at    DateTime       @default(now())
+  updated_at    DateTime       @updatedAt
+
+  familyMembers FamilyMember[]
+}
+
+model Family {
+  id               String         @id @default(uuid())
+  name             String         @db.VarChar(255)
+  address          String?        @db.Text
+  
+  // Phục vụ tính năng: Tạo mã 6 chữ số trong vòng 5 phút [cite: 118]
+  invite_code      String?        @unique @db.VarChar(6) 
+  invite_code_exp  DateTime?      
+  
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  members          FamilyMember[]
+}
+
+model FamilyMember {
+  id            String     @id @default(uuid())
+  family_id     String
+  user_id       String?    // Null nếu chỉ là profile do Chủ nhà tạo, chưa có tài khoản app
+  
+  // Tích hợp phân quyền ngữ cảnh Gia đình ở đây
+  family_role   FamilyRole @default(MEMBER) 
+  join_status   JoinStatus @default(PENDING) // Trạng thái chờ duyệt 
+  
+  date_of_birth DateTime?  @db.Date
+  avatar_url    String?    @db.VarChar(255)
+  created_at    DateTime   @default(now())
+
+  // Khóa ngoại
+  family        Family     @relation(fields: [family_id], references: [id], onDelete: Cascade)
+  user          User?      @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  // Đảm bảo 1 user chỉ có 1 bản ghi trong 1 family
+  @@unique([family_id, user_id]) 
+  @@index([family_id])
+  @@index([user_id])
+}
