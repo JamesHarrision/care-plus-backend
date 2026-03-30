@@ -3,6 +3,7 @@ import cors from 'cors'
 import helmet from 'helmet'
 import { prisma } from './config/prisma.config';
 import { redisClient } from './config/redis.config'
+import authRoutes from './routes/auth.route'
 
 const app = express();
 
@@ -23,6 +24,8 @@ app.get("/", async (req, res) => {
     status: 'success',
   })
 });
+
+app.use('/api/auth', authRoutes);
 
 export default app;
 
