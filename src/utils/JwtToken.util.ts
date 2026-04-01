@@ -9,8 +9,12 @@ const JWT_ACCESS_EXPIRES_IN = '15m';
 const JWT_REFRESH_EXPIRES_IN = '7d';
 
 export const TokenUtil = {
-  generateToken: (): string => {
-    return crypto.randomBytes(32).toString('hex');
+  generateToken: (user: JwtPayLoad) => {
+    const tokens = {
+      accessToken: TokenUtil.signAccessToken({ userId: user.userId, systemRole: user.systemRole }),
+      refreshToken: TokenUtil.signRefreshToken({ userId: user.userId })
+    }
+    return tokens;
   },
 
   signAccessToken: (payload: JwtPayLoad): string => {
@@ -35,5 +39,9 @@ export const TokenUtil = {
 
   verifyAccessToken: (token: string) => {
     return jwt.verify(token, ACCESS_SECRET as string) as JwtPayLoad;
+  },
+
+  verifyRefreshToken: (token: string) => {
+    return jwt.verify(token, REFRESH_SECRET as string) as JwtPayLoad;
   }
 }

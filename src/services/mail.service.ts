@@ -1,4 +1,4 @@
-import { mailRepository } from "../repositories/mail.repository";
+import { otpRepository } from "../repositories/otp.repository";
 import { sendEmail } from "../utils/nodemailer.util";
 
 export const mailService = {
@@ -8,7 +8,7 @@ export const mailService = {
 
   async sendVerificationOTP(email: string) {
     const otp = this.generateOTP();
-    await mailRepository.saveOTP(email, otp, 300);
+    await otpRepository.saveOTP(email, otp, 300);
     const html = `
       <div style="font-family: Arial, Helvetica, sans-serif; background-color: #f4f6f8; padding: 40px 0;">
         <div style="max-width: 500px; margin: auto; background: #ffffff; border-radius: 10px; padding: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.08);">

@@ -1,20 +1,28 @@
-import redisClient from "../config/redis.config";
 import { prisma } from "../config/prisma.config";
 
-export const authRepository = {
-  async getBlackList(token: string): Promise<string | null> {
-    return redisClient.get(`blacklist:${token}`);
+export const userRepository = {
+  async findById(id: string) {
+    return prisma.user.findUnique({ where: { id } });
   },
 
-  async findFamilyMember(familyId: string, userId: string) {
-    return await prisma.familyMember.findUnique({
-      where: {
-        family_id_user_id: {
-          family_id: familyId,
-          user_id: userId
-        }
-      }
-    })
+  async updatePasswordByEmail(
+    email: string,
+    password_hash: string
+  ) {
+    return await prisma.user.update({
+      where: { email: email },
+      data: { password_hash }
+    });
+  },
+
+  async updatePasswordById(
+    id: string,
+    password_hash: string
+  ) {
+    return await prisma.user.update({
+      where: { id: id },
+      data: { password_hash }
+    });
   },
 
   async findByEmailOrPhone(identifier: string) {
@@ -55,4 +63,5 @@ export const authRepository = {
       data: { is_active: true },
     });
   },
+
 }
