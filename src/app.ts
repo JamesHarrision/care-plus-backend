@@ -4,6 +4,8 @@ import helmet from 'helmet';
 import { prisma } from './config/prisma.config';
 import { redisClient } from './config/redis.config';
 import authRoutes from './routes/auth.route';
+import familyRoutes from './routes/family.route';
+
 import startSwagger from './config/swagger.config';
 
 const app = express();
@@ -29,5 +31,6 @@ app.get('/', async (req, res) => {
 startSwagger(app);
 
 app.use('/api/auth', authRoutes);
+app.use('/api/family', familyRoutes);
 
 export default app;
