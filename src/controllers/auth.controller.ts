@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
-import { authService } from '../services/auth.service';
 import { AuthRequest } from '../interfaces/interfaces';
+import { authService } from '../services/auth.service';
 
 const ERROR_MAP: Record<string, { status: number; message: string }> = {
   EMAIL_OR_PHONE_EXISTS: { status: 409, message: 'Số điện thoại hoặc Email đã được sử dụng' },
@@ -11,9 +11,14 @@ const ERROR_MAP: Record<string, { status: number; message: string }> = {
   ACCOUNT_NOT_ACTIVE: { status: 403, message: 'Tài khoản chưa được kích hoạt. Vui lòng xác thực email.' },
   WRONG_PASSWORD: { status: 401, message: 'Mật khẩu không chính xác' },
 
-  INVALID_REFRESH_TOKEN: { status: 401, message: 'Refresh Token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.' },
+  INVALID_REFRESH_TOKEN: {
+    status: 401,
+    message: 'Refresh Token không hợp lệ hoặc đã hết hạn. Vui lòng đăng nhập lại.',
+  },
   USER_UNAVAILABLE: { status: 401, message: 'Tài khoản không khả dụng' },
   WRONG_OLD_PASSWORD: { status: 400, message: 'Mật khẩu cũ không chính xác' },
+  NO_TOKEN_PROVIDED: { status: 401, message: 'Không tìm thấy token trong header' },
+  TOKEN_BLACKLISTED: { status: 401, message: 'Token đã bị vô hiệu hóa (Đăng xuất)' },
 };
 
 function handleError(res: Response, error: any) {
@@ -36,7 +41,7 @@ export class AuthController {
     } catch (error: any) {
       handleError(res, error);
     }
-  }
+  };
 
   public verifyEmail = async (req: Request, res: Response) => {
     try {
@@ -46,7 +51,7 @@ export class AuthController {
     } catch (error) {
       handleError(res, error);
     }
-  }
+  };
 
   public resendVerify = async (req: Request, res: Response) => {
     try {
@@ -56,17 +61,22 @@ export class AuthController {
     } catch (error) {
       handleError(res, error);
     }
-  }
+  };
 
   public login = async (req: Request, res: Response) => {
     try {
+      // const token = TokenUtil.extractTokenFromHeader(req.headers.authorization);
+      // const decoded = await authService.verifyToken(token);
+      // if (decoded) {
+      //   // res.status(200).json({ status: 'success', data: result });
+      // }
       const { identifier, password } = req.body;
       const result = await authService.login(identifier, password);
       res.status(200).json({ status: 'success', data: result });
     } catch (error) {
       handleError(res, error);
     }
-  }
+  };
 
   public refreshToken = async (req: Request, res: Response) => {
     try {
@@ -76,7 +86,7 @@ export class AuthController {
     } catch (error: any) {
       handleError(res, error);
     }
-  }
+  };
 
   public logout = async (req: Request, res: Response) => {
     try {
@@ -90,17 +100,20 @@ export class AuthController {
     } catch (error: any) {
       handleError(res, error);
     }
-  }
+  };
 
   public forgotPassword = async (req: Request, res: Response) => {
     try {
       const { email } = req.body;
       await authService.forgotPassword(email);
-      res.status(200).json({ status: 'success', data: { message: 'Khôi phục mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.' } });
+      res.status(200).json({
+        status: 'success',
+        data: { message: 'Khôi phục mật khẩu thành công. Bạn có thể đăng nhập bằng mật khẩu mới.' },
+      });
     } catch (error) {
       handleError(res, error);
     }
-  }
+  };
 
   public resetPassword = async (req: Request, res: Response) => {
     try {
@@ -108,13 +121,13 @@ export class AuthController {
       await authService.resetPassword({
         email: email,
         otp: otp,
-        newPassword: newPassword
-      })
-      res.status(200).json({ message: "Đổi mật khẩu thành công" });
+        newPassword: newPassword,
+      });
+      res.status(200).json({ message: 'Đổi mật khẩu thành công' });
     } catch (error) {
       handleError(res, error);
     }
-  }
+  };
 
   public changePassword = async (req: AuthRequest, res: Response) => {
     try {
@@ -127,5 +140,5 @@ export class AuthController {
     } catch (error) {
       handleError(res, error);
     }
-  }
+  };
 }

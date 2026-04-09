@@ -1,14 +1,14 @@
-import { SystemRole } from "@prisma/client";
-import { JwtPayLoad } from "../interfaces/interfaces";
-import { TokenUtil } from "../utils/JwtToken.util";
-import { passwordUtil } from "../utils/password.util";
-import { mailService } from "./mail.service";
-import { userRepository } from "../repositories/user.repository";
-import jwt from "jsonwebtoken";
-import { sendEmail } from "../utils/nodemailer.util";
-import { tokenRepository } from "../repositories/token.repository";
-import { familyRepository } from "../repositories/family.repository";
-import { otpRepository } from "../repositories/otp.repository";
+import { SystemRole } from '@prisma/client';
+import jwt from 'jsonwebtoken';
+import { JwtPayLoad } from '../interfaces/interfaces';
+import { familyRepository } from '../repositories/family.repository';
+import { otpRepository } from '../repositories/otp.repository';
+import { tokenRepository } from '../repositories/token.repository';
+import { userRepository } from '../repositories/user.repository';
+import { TokenUtil } from '../utils/JwtToken.util';
+import { sendEmail } from '../utils/nodemailer.util';
+import { passwordUtil } from '../utils/password.util';
+import { mailService } from './mail.service';
 
 export const authService = {
   // Helpers
@@ -16,7 +16,7 @@ export const authService = {
     const isBlacklisted = await tokenRepository.getBlackList(token);
     if (isBlacklisted) {
       throw new Error('TOKEN_BLACKLISTED');
-    };
+    }
 
     const decoded = TokenUtil.verifyAccessToken(token) as JwtPayLoad;
     return decoded;
@@ -26,11 +26,7 @@ export const authService = {
     return allowedRole.includes(userRole);
   },
 
-  async checkFamilyRole(
-    familyId: string,
-    userId: string,
-    allowedRoles: ("MEMBER" | "OWNER")[]
-  ) {
+  async checkFamilyRole(familyId: string, userId: string, allowedRoles: ('MEMBER' | 'OWNER')[]) {
     const member = await familyRepository.findFamilyMember(familyId, userId);
 
     if (!member) {
@@ -45,12 +41,7 @@ export const authService = {
   },
 
   // Main services:
-  async register(data: {
-    full_name: string,
-    phone: string,
-    email: string,
-    password: string
-  }) {
+  async register(data: { full_name: string; phone: string; email: string; password: string }) {
     const { full_name, phone, email, password } = data;
 
     const existing = await userRepository.existsByEmailOrPhone(phone, email);
@@ -63,14 +54,14 @@ export const authService = {
       full_name: full_name,
       email: email,
       password_hash: password_hash,
-      phone: phone
+      phone: phone,
     });
 
     if (email) {
       await mailService.sendVerificationOTP(email);
     }
 
-    return { userId: newUser.id }
+    return { userId: newUser.id };
   },
 
   async verifyEmail(email: string, otp: string) {
@@ -101,9 +92,7 @@ export const authService = {
     const isValid = await passwordUtil.comparePassword(password, user.password_hash);
     if (!isValid) throw new Error('WRONG_PASSWORD');
 
-    const tokens = TokenUtil.generateToken(
-      { userId: user.id, systemRole: user.system_role } as JwtPayLoad
-    );
+    const tokens = TokenUtil.generateToken({ userId: user.id, systemRole: user.system_role } as JwtPayLoad);
 
     return {
       user: {
@@ -152,13 +141,7 @@ export const authService = {
     await sendEmail(email, 'Khôi phục mật khẩu Care+', text);
   },
 
-  async resetPassword(
-    data: {
-      email: string,
-      otp: string,
-      newPassword: string
-    }
-  ) {
+  async resetPassword(data: { email: string; otp: string; newPassword: string }) {
     const { email, otp, newPassword } = data;
     const storedOtp = await otpRepository.getPasswordResetOTP(email);
 
@@ -173,9 +156,9 @@ export const authService = {
   async changePassword(
     userId: string,
     data: {
-      oldPassword: string,
-      newPassword: string
-    }
+      oldPassword: string;
+      newPassword: string;
+    },
   ) {
     const { oldPassword, newPassword } = data;
 
@@ -187,6 +170,23 @@ export const authService = {
 
     const password = await passwordUtil.hashPassword(newPassword);
     await userRepository.updatePasswordById(userId, password);
-  }
+  },
 
-}
+  // Automatically check if token is valid;
+  async checkValidAccessToken(tokenHeader: string | undefined) {
+    const result = {
+      valid: false,
+      user: {} as { id: string; role: SystemRole },
+    };
+    if (!tokenHeader) return result;
+    const token = TokenUtil.extractTokenFromHeader(tokenHeader);
+    const decoded = await this.verifyToken(token);
+
+    result.user = {
+      id: decoded.userId,
+      role: decoded.systemRole,
+    };
+    result.valid = true;
+    return result;
+  },
+};

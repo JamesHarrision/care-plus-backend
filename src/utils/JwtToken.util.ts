@@ -1,5 +1,4 @@
-import jwt from 'jsonwebtoken'
-import crypto from 'crypto';
+import jwt from 'jsonwebtoken';
 import { JwtPayLoad } from '../interfaces/interfaces';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
@@ -12,8 +11,8 @@ export const TokenUtil = {
   generateToken: (user: JwtPayLoad) => {
     const tokens = {
       accessToken: TokenUtil.signAccessToken({ userId: user.userId, systemRole: user.systemRole }),
-      refreshToken: TokenUtil.signRefreshToken({ userId: user.userId })
-    }
+      refreshToken: TokenUtil.signRefreshToken({ userId: user.userId }),
+    };
     return tokens;
   },
 
@@ -43,5 +42,17 @@ export const TokenUtil = {
 
   verifyRefreshToken: (token: string) => {
     return jwt.verify(token, REFRESH_SECRET as string) as JwtPayLoad;
-  }
-}
+  },
+
+  extractTokenFromHeader(header: string | undefined): string {
+    if (!header) {
+      throw new Error('NO_TOKEN_PROVIDED');
+    }
+    const parts = header.split(' ');
+    console.log(header);
+    if (parts.length !== 2 || parts[0] !== 'Bearer') {
+      throw new Error('NO_TOKEN_PROVIDED');
+    }
+    return parts[1];
+  },
+};

@@ -1,29 +1,17 @@
-import { NextFunction, Request, Response } from "express";
-import { SystemRole } from "@prisma/client";
-import { authService } from "../services/auth.service";
-import { AuthRequest } from "../interfaces/interfaces";
-import { TokenUtil } from "../utils/JwtToken.util";
+import { SystemRole } from '@prisma/client';
+import { NextFunction, Response } from 'express';
+import { AuthRequest } from '../interfaces/interfaces';
+import { authService } from '../services/auth.service';
+import { TokenUtil } from '../utils/JwtToken.util';
 
-export const requireAuth = async (
-  req: AuthRequest,
-  res: Response,
-  next: NextFunction
-) => {
+export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader?.startsWith("Bearer ")) {
-      return res.status(401).json({ status: 'error', message: 'Không tìm thấy Access Token' });
+    const { valid, user } = await authService.checkValidAccessToken(req.headers.authorization);
+    if (!valid || !user) {
+      return res.status(401).json({ status: 'error', message: 'Token không hợp lệ hoặc đã hết hạn' });
     }
-
-    const token = authHeader.split(" ")[1];
-    const decoded = await authService.verifyToken(token);
-
-    req.user = {
-      id: decoded.userId,
-      role: decoded.systemRole,
-    };
-
-    next()
+    req.user = user;
+    next();
   } catch (error: any) {
     const message =
       error.message === 'TOKEN_BLACKLISTED'
@@ -32,7 +20,7 @@ export const requireAuth = async (
 
     return res.status(401).json({ status: 'error', message });
   }
-}
+};
 
 export const requireSystemRole = async (roles: SystemRole[]) => {
   return (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -43,8 +31,8 @@ export const requireSystemRole = async (roles: SystemRole[]) => {
       });
     }
     next();
-  }
-}
+  };
+};
 
 export const requireFamilyContext = (allowedRoles: ('OWNER' | 'MEMBER')[]) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
@@ -79,5 +67,5 @@ export const requireFamilyContext = (allowedRoles: ('OWNER' | 'MEMBER')[]) => {
 
       return res.status(status).json({ status: 'error', message });
     }
-  }
-}
+  };
+};
