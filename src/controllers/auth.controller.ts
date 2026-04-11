@@ -46,8 +46,9 @@ export class AuthController {
   public verifyEmail = async (req: Request, res: Response) => {
     try {
       const { email, otp } = req.body;
-      await authService.verifyEmail(email, otp);
-      res.status(200).json({ status: 'success', data: { message: 'Xác thực tài khoản thành công' } });
+      const result = await authService.verifyEmail(email, otp);
+      // console.log(result);
+      res.status(200).json({ status: 'success', data: { message: 'Xác thực tài khoản thành công', data: result } });
     } catch (error) {
       handleError(res, error);
     }
@@ -58,6 +59,17 @@ export class AuthController {
       const { email } = req.body;
       await authService.resendVerify(email);
       res.status(200).json({ status: 'success', data: { message: 'Đã gửi lại mã OTP. Vui lòng kiểm tra email.' } });
+    } catch (error) {
+      handleError(res, error);
+    }
+  };
+
+  // This endpoint is for users who just registered but didn't receive OTP, so they can login with email/phone and resend OTP if account is not active yet. This enhances UX by reducing friction to receive OTP.
+  public resendVerifyByLogin = async (req: Request, res: Response) => {
+    try {
+      const { identifier } = req.body;
+      const email = await authService.resendVerify(identifier);
+      res.status(200).json({ status: 'success', email, data: { message: 'Đã gửi lại mã OTP.' } });
     } catch (error) {
       handleError(res, error);
     }

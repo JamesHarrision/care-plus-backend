@@ -39,15 +39,25 @@ const familyController = new FamilyController();
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
  *                   type: object
+ *                   required:
+ *                     - family
  *                   properties:
  *                     family:
  *                       type: object
+ *                       required:
+ *                         - id
+ *                         - name
+ *                         - created_at
+ *                         - updated_at
  *                       properties:
  *                         id:
  *                           type: string
@@ -132,12 +142,17 @@ router.post('/', requireAuth, familyController.createFamily);
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
  *                   type: object
+ *                   required:
+ *                     - message
  *                   properties:
  *                     message:
  *                       type: string
@@ -162,6 +177,19 @@ router.post('/', requireAuth, familyController.createFamily);
  *               message: Mã không hợp lệ hoặc đã hết hạn
  *       '401':
  *         description: Missing or invalid access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '409':
  *         description: User is already a member or has a pending request.
  *         content:
@@ -207,12 +235,18 @@ router.post('/join', requireAuth, familyController.joinFamily);
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
  *                   type: object
+ *                   required:
+ *                     - inviteCode
+ *                     - expiresIn
  *                   properties:
  *                     inviteCode:
  *                       type: string
@@ -225,8 +259,36 @@ router.post('/join', requireAuth, familyController.joinFamily);
  *               data:
  *                 inviteCode: ABC123
  *                 expiresIn: 300
+ *       '400':
+ *         description: Family ID or user information is missing.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             example:
+ *               status: error
+ *               message: Thiếu thông tin Family ID hoặc User
  *       '401':
  *         description: Missing or invalid access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '403':
  *         description: Authenticated user is not the owner of the family or is not part of the family.
  *         content:
@@ -283,17 +345,25 @@ router.post(
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
  *                   type: object
+ *                   required:
+ *                     - members
  *                   properties:
  *                     members:
  *                       type: array
  *                       items:
  *                         type: object
+ *                         required:
+ *                           - id
+ *                           - join_status
  *                         properties:
  *                           id:
  *                             type: string
@@ -301,14 +371,17 @@ router.post(
  *                           user_id:
  *                             type: string
  *                             format: uuid
+ *                             nullable: true
  *                           full_name:
  *                             type: string
+ *                             nullable: true
  *                           email:
  *                             type: string
  *                             format: email
  *                             nullable: true
  *                           phone:
  *                             type: string
+ *                             nullable: true
  *                           join_status:
  *                             type: string
  *                             enum:
@@ -325,10 +398,57 @@ router.post(
  *                     email: nguyenvanb@example.com
  *                     phone: '0912345678'
  *                     join_status: PENDING
+ *       '400':
+ *         description: Family ID or user information is missing.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             example:
+ *               status: error
+ *               message: Thiếu thông tin Family ID hoặc User
  *       '401':
  *         description: Missing or invalid access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '403':
  *         description: Authenticated user is not the owner of the family or is not part of the family.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               notFamilyMember:
+ *                 value:
+ *                   status: error
+ *                   message: Bạn không phải là thành viên của gia đình này
+ *               insufficientRole:
+ *                 value:
+ *                   status: error
+ *                   message: Quyền hạn trong gia đình không đủ
  *       '500':
  *         description: Internal server error.
  */
@@ -386,12 +506,17 @@ router.get(
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
  *                   type: object
+ *                   required:
+ *                     - message
  *                   properties:
  *                     message:
  *                       type: string
@@ -416,8 +541,40 @@ router.get(
  *               message: Không tìm thấy yêu cầu
  *       '401':
  *         description: Missing or invalid access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '403':
  *         description: Authenticated user is not the owner of the family or is not part of the family.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *             examples:
+ *               notFamilyMember:
+ *                 value:
+ *                   status: error
+ *                   message: Bạn không phải là thành viên của gia đình này
+ *               insufficientRole:
+ *                 value:
+ *                   status: error
+ *                   message: Quyền hạn trong gia đình không đủ
  */
 router.patch(
   '/:familyId/members/:memberId/status',

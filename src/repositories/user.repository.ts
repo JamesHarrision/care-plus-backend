@@ -1,39 +1,30 @@
-import { prisma } from "../config/prisma.config";
+import { prisma } from '../config/prisma.config';
 
 export const userRepository = {
   async findById(id: string) {
     return prisma.user.findUnique({ where: { id } });
   },
 
-  async updatePasswordByEmail(
-    email: string,
-    password_hash: string
-  ) {
+  async updatePasswordByEmail(email: string, password_hash: string) {
     return await prisma.user.update({
       where: { email: email },
-      data: { password_hash }
+      data: { password_hash },
     });
   },
 
-  async updatePasswordById(
-    id: string,
-    password_hash: string
-  ) {
+  async updatePasswordById(id: string, password_hash: string) {
     return await prisma.user.update({
       where: { id: id },
-      data: { password_hash }
+      data: { password_hash },
     });
   },
 
   async findByEmailOrPhone(identifier: string) {
     return await prisma.user.findFirst({
       where: {
-        OR: [
-          { phone: identifier },
-          { email: identifier }
-        ]
-      }
-    })
+        OR: [{ phone: identifier }, { email: identifier }],
+      },
+    });
   },
 
   async findByEmail(email: string) {
@@ -46,12 +37,7 @@ export const userRepository = {
     });
   },
 
-  async createUser(data: {
-    full_name: string;
-    phone: string;
-    email: string;
-    password_hash: string;
-  }) {
+  async createUser(data: { full_name: string; phone: string; email: string; password_hash: string }) {
     return prisma.user.create({
       data: { ...data, is_active: false },
     });
@@ -61,7 +47,8 @@ export const userRepository = {
     return prisma.user.update({
       where: { email },
       data: { is_active: true },
+      // When activating, we also want to return the user's id and role for token generation -> enhance UX
+      select: { id: true, system_role: true, full_name: true },
     });
   },
-
-}
+};

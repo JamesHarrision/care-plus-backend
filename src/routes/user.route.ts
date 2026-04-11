@@ -11,7 +11,7 @@ const router = Router();
  *     tags:
  *       - User
  *     summary: Get current user
- *     description: Returns the authenticated user's id and system role.
+ *     description: Returns the authenticated user's merged profile data, including the token role and the latest database record.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -21,12 +21,23 @@ const router = Router();
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
  *                   type: object
+ *                   required:
+ *                     - id
+ *                     - role
+ *                     - full_name
+ *                     - system_role
+ *                     - is_active
+ *                     - created_at
+ *                     - updated_at
  *                   properties:
  *                     id:
  *                       type: string
@@ -36,13 +47,52 @@ const router = Router();
  *                       enum:
  *                         - ADMIN
  *                         - USER
+ *                     full_name:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *                       nullable: true
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       nullable: true
+ *                     system_role:
+ *                       type: string
+ *                       enum:
+ *                         - ADMIN
+ *                         - USER
+ *                     is_active:
+ *                       type: boolean
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
  *             example:
  *               status: success
  *               data:
  *                 id: 6f2d0c6a-7d1f-4bc3-9a80-1ed1fd5b3333
  *                 role: USER
+ *                 full_name: Nguyen Van A
+ *                 phone: '0912345678'
+ *                 email: nguyenvana@example.com
+ *                 system_role: USER
+ *                 is_active: true
+ *                 created_at: '2026-04-10T00:00:00.000Z'
+ *                 updated_at: '2026-04-10T00:00:00.000Z'
  *       '401':
  *         description: Missing or invalid access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
  *       '404':
  *         description: User account not found.
  *         content:
@@ -69,7 +119,12 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
   if (!account) {
     return res.status(404).json({ status: 'error', message: 'Không tồn tại người dùng.' });
   }
-  return res.status(200).json({ status: 'success', data: { ...user } });
+  const { password_hash, ...rest } = account;
+  const userInfo = {
+    ...user,
+    ...rest,
+  }; // Không trả về password
+  return res.status(200).json({ status: 'success', data: userInfo });
 });
 
 export default router;

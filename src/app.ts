@@ -24,7 +24,7 @@ app.use(helmet());
  *     tags:
  *       - System
  *     summary: Health check
- *     description: Returns a basic readiness payload after touching the database and Redis cache.
+ *     description: Returns a readiness payload after touching Prisma and writing a short-lived Redis test key.
  *     responses:
  *       '200':
  *         description: Application is reachable.

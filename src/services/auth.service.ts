@@ -69,18 +69,26 @@ export const authService = {
 
     if (!storedOtp) throw new Error('OTP_EXPIRED');
     if (storedOtp !== otp) throw new Error('OTP_INVALID');
-
-    await userRepository.activateUser(email);
     await otpRepository.deleteOtp(email);
+
+    // Generate tokens
+    const user = await userRepository.activateUser(email);
+    const tokens = TokenUtil.generateToken({ userId: user.id, systemRole: user.system_role } as JwtPayLoad);
+    return {
+      user: { ...user },
+      tokens,
+    };
   },
 
-  async resendVerify(email: string) {
-    const user = await userRepository.findByEmail(email);
+  async resendVerify(identifier: string) {
+    const user = await userRepository.findByEmailOrPhone(identifier);
 
-    if (!user) throw new Error('USER_NOT_FOUND');
+    if (!user || !user.email) throw new Error('USER_NOT_FOUND');
     if (user.is_active) throw new Error('ALREADY_ACTIVE');
 
-    await mailService.sendVerificationOTP(email);
+    // await mailService.sendVerificationOTP(email);
+    await mailService.sendVerificationOTP(user.email);
+    return user.email;
   },
 
   async login(identifier: string, password: string) {
