@@ -17,6 +17,31 @@ app.use(express.json());
 app.use(cors());
 app.use(helmet());
 
+/**
+ * @openapi
+ * /:
+ *   get:
+ *     tags:
+ *       - System
+ *     summary: Health check
+ *     description: Returns a basic readiness payload after touching the database and Redis cache.
+ *     responses:
+ *       '200':
+ *         description: Application is reachable.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: Welcome to Care+
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *       '500':
+ *         description: Internal server error.
+ */
 // Test route
 app.get('/', async (req, res) => {
   const user = await prisma.user.count();
