@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { FamilyController } from "../controllers/familyController";
 import { requireAuth, requireFamilyContext, requireSystemRole } from "../middlewares/auth.middleware";
+import medicationRoutes from "./medication.route";
 
 const router = Router();
 const familyController = new FamilyController();
@@ -26,5 +27,7 @@ router.patch("/:familyId/members/:memberId/status",
   requireFamilyContext(["OWNER"]),
   familyController.reviewJoinRequest
 )
+
+router.use("/:familyId/members/:memberId/medications", medicationRoutes)
 
 export default router;
