@@ -673,4 +673,6 @@ router.post('/logout', requireAuth, authController.logout);
  */
 router.post('/change-password', requireAuth, authController.changePassword);
 
+router.post('/resend-verify-by-login', authController.resendVerifyByLogin);
+
 export default router;
