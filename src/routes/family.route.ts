@@ -2,6 +2,7 @@ import { Router } from "express";
 import { FamilyController } from "../controllers/familyController";
 import { requireAuth, requireFamilyContext, requireSystemRole } from "../middlewares/auth.middleware";
 import medicationRoutes from "./medication.route";
+import healthRoutes from './health.route'
 
 const router = Router();
 const familyController = new FamilyController();
@@ -584,5 +585,6 @@ router.patch(
 );
 
 router.use("/:familyId/members/:memberId/medications", medicationRoutes)
+router.use('/:familyId/members/:memberId/health', healthRoutes);
 
 export default router;
