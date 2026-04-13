@@ -76,4 +76,29 @@ export class FamilyController {
       res.status(400).json({ status: 'error', message: 'Không tìm thấy yêu cầu' });
     }
   }
+
+  public getUserFamilies = async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+      }
+
+      const families = await familyService.getUserFamilies(userId);
+      res.status(200).json({ status: 'success', data: { families } });
+    } catch (error) {
+      res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
+    }
+  }
+
+  public getFamilyMembers = async (req: AuthRequest, res: Response) => {
+    try {
+      const { familyId } = req.params;
+      const members = await familyService.getFamilyMembers(familyId as string);
+
+      res.status(200).json({ status: 'success', data: { members } });
+    } catch (error) {
+      res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
+    }
+  }
 }

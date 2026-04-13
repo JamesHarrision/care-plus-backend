@@ -7,6 +7,7 @@ import authRoutes from './routes/auth.route';
 import familyRoutes from './routes/family.route';
 import userRoutes from './routes/user.route';
 import aiRoutes from './routes/ai.route';
+import medicationStandaloneRoutes from './routes/medication-standalone.route';
 
 import startSwagger from './config/swagger.config';
 
@@ -61,5 +62,6 @@ app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
 app.use('/api/user', userRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/medications', medicationStandaloneRoutes);
 
 export default app;

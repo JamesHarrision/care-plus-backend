@@ -76,6 +76,32 @@ export const familyRepository = {
         join_status: status
       }
     })
+  },
+
+  async getUserFamilies(userId: string) {
+    return await prisma.familyMember.findMany({
+      where: {
+        user_id: userId,
+        join_status: JoinStatus.APPROVED
+      },
+      include: {
+        family: true
+      }
+    });
+  },
+
+  async getFamilyMembers(familyId: string) {
+    return await prisma.familyMember.findMany({
+      where: {
+        family_id: familyId,
+        join_status: JoinStatus.APPROVED
+      },
+      include: {
+        user: {
+          select: { id: true, full_name: true, email: true, phone: true }
+        }
+      }
+    });
   }
 
 }
