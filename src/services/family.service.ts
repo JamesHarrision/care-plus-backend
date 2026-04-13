@@ -44,6 +44,32 @@ export const familyService = {
 
     // Tạm thời log ra console thay vì dùng RabbitMQ/FCM để tiết kiệm thời gian (có thể bổ sung sau)
     console.log(`[RabbitMQ Mock] Gửi FCM đến user ${memberId}: Yêu cầu tham gia ${status}`);
+  },
+
+  async getUserFamilies(userId: string) {
+    const memberships = await familyRepository.getUserFamilies(userId);
+    return memberships.map(m => ({
+      family_id: m.family_id,
+      family_name: m.family.name,
+      family_address: m.family.address,
+      family_role: m.family_role,
+      joined_at: m.created_at
+    }));
+  },
+
+  async getFamilyMembers(familyId: string) {
+    const members = await familyRepository.getFamilyMembers(familyId);
+    return members.map(m => ({
+      member_id: m.id,
+      user_id: m.user_id,
+      full_name: m.user?.full_name || 'Hồ sơ chưa liên kết tài khoản',
+      email: m.user?.email,
+      phone: m.user?.phone,
+      family_role: m.family_role,
+      date_of_birth: m.date_of_birth,
+      avatar_url: m.avatar_url,
+      joined_at: m.created_at
+    }));
   }
 
 }

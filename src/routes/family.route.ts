@@ -10,6 +10,76 @@ const familyController = new FamilyController();
 /**
  * @openapi
  * /api/family:
+ *   get:
+ *     tags:
+ *       - Family
+ *     summary: Get user families
+ *     description: Retrieves a list of families the authenticated user is a member of.
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       '200':
+ *         description: List of families retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   required:
+ *                     - families
+ *                   properties:
+ *                     families:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         required:
+ *                           - family_id
+ *                           - family_name
+ *                           - family_role
+ *                           - joined_at
+ *                         properties:
+ *                           family_id:
+ *                             type: string
+ *                             format: uuid
+ *                           family_name:
+ *                             type: string
+ *                           family_address:
+ *                             type: string
+ *                             nullable: true
+ *                           family_role:
+ *                             type: string
+ *                             enum: [OWNER, MEMBER]
+ *                           joined_at:
+ *                             type: string
+ *                             format: date-time
+ *       '401':
+ *         description: Missing or invalid access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *       '500':
+ *         description: Internal server error.
+ */
+router.get('/', requireAuth, familyController.getUserFamilies);
+
+/**
+ * @openapi
+ * /api/family:
  *   post:
  *     tags:
  *       - Family
@@ -583,6 +653,116 @@ router.patch(
   requireFamilyContext(['OWNER']),
   familyController.reviewJoinRequest,
 );
+
+/**
+ * @openapi
+ * /api/family/{familyId}/members:
+ *   get:
+ *     tags:
+ *       - Family
+ *     summary: Get family members
+ *     description: Retrieves a list of all members in the specified family. Both OWNER and MEMBER can access this.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Family identifier
+ *     responses:
+ *       '200':
+ *         description: List of family members retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   required:
+ *                     - members
+ *                   properties:
+ *                     members:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         required:
+ *                           - member_id
+ *                           - family_role
+ *                           - joined_at
+ *                         properties:
+ *                           member_id:
+ *                             type: string
+ *                             format: uuid
+ *                           user_id:
+ *                             type: string
+ *                             format: uuid
+ *                             nullable: true
+ *                           full_name:
+ *                             type: string
+ *                             nullable: true
+ *                           email:
+ *                             type: string
+ *                             format: email
+ *                             nullable: true
+ *                           phone:
+ *                             type: string
+ *                             nullable: true
+ *                           family_role:
+ *                             type: string
+ *                             enum: [OWNER, MEMBER]
+ *                           date_of_birth:
+ *                             type: string
+ *                             format: date
+ *                             nullable: true
+ *                           avatar_url:
+ *                             type: string
+ *                             format: uri
+ *                             nullable: true
+ *                           joined_at:
+ *                             type: string
+ *                             format: date-time
+ *       '401':
+ *         description: Missing or invalid access token.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *       '403':
+ *         description: Forbidden (Not a member of the family).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: error
+ *                 message:
+ *                   type: string
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.get("/:familyId/members",
+  requireAuth,
+  requireFamilyContext(["OWNER", "MEMBER"]),
+  familyController.getFamilyMembers
+)
 
 router.use("/:familyId/members/:memberId/medications", medicationRoutes)
 router.use('/:familyId/members/:memberId/health', healthRoutes);
