@@ -5,6 +5,7 @@ export interface IMedication {
   dosage: string;
   frequency: string;
   bin?: string;
+  times?: string[];
   days?: number;
 }
 
@@ -16,6 +17,7 @@ export interface IMedicationSchedule extends Document {
   end_date: Date;
   reminder_message: string;
   is_active: boolean;
+  session_times?: string[];
   confirmed_by?: string;
   created_at: Date;
 }
@@ -29,6 +31,7 @@ const MedicationSchema: Schema = new Schema({
       dosage: { type: String, required: true },
       frequency: { type: String, required: true },
       bin: { type: String },
+      times: [{ type: String }],
       days: { type: Number }
     }
   ],
@@ -36,6 +39,7 @@ const MedicationSchema: Schema = new Schema({
   end_date: { type: Date },
   reminder_message: { type: String },
   is_active: { type: Boolean, default: true },
+  session_times: [{ type: String }],
   confirmed_by: { type: String },
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
