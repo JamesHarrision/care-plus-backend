@@ -16,10 +16,12 @@
     "@google/genai": "^1.49.0",
     "@prisma/client": "5.22",
     "@types/swagger-jsdoc": "^6.0.4",
+    "amqplib": "^1.0.3",
     "bcrypt": "^6.0.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "firebase-admin": "^13.8.0",
     "helmet": "^8.1.0",
     "jsonwebtoken": "^9.0.3",
     "mongodb-memory-server": "^11.0.1",
@@ -31,6 +33,7 @@
     "swagger-ui-express": "^5.0.1"
   },
   "devDependencies": {
+    "@types/amqplib": "^0.10.8",
     "@types/bcrypt": "^6.0.0",
     "@types/cors": "^2.8.19",
     "@types/express": "^5.0.6",

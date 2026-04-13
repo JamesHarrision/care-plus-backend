@@ -23,6 +23,22 @@ export const familyService = {
     }
 
     await familyRepository.addPendingMember(familyId, userId);
+
+    // Push yêu cầu tham gia vào queue notifications.family cho Chủ hộ
+    try {
+      const { getChannel } = await import('../config/rabbitmq.config');
+      getChannel().sendToQueue(
+        'notifications.family',
+        Buffer.from(JSON.stringify({
+          type: 'JOIN_REQUEST',
+          familyId,
+          requesterId: userId
+        }))
+      );
+    } catch (err) {
+      console.error('RabbitMQ publish error (joinFamily):', err);
+    }
+
     return familyId;
   },
 
@@ -42,8 +58,29 @@ export const familyService = {
     const result = await familyRepository.updateMemberStatus(familyId, memberId, status);
     if (result.count === 0) throw new Error('MEMBER_NOT_FOUND');
 
-    // Tạm thời log ra console thay vì dùng RabbitMQ/FCM để tiết kiệm thời gian (có thể bổ sung sau)
-    console.log(`[RabbitMQ Mock] Gửi FCM đến user ${memberId}: Yêu cầu tham gia ${status}`);
+    // Push vào RabbitMQ queue notifications.family
+    try {
+      const { prisma } = await import('../config/prisma.config');
+      const member = await prisma.familyMember.findFirst({
+        where: { id: memberId },
+        include: { family: true }
+      });
+
+      if (member && member.user_id) {
+        const { getChannel } = await import('../config/rabbitmq.config');
+        getChannel().sendToQueue(
+          'notifications.family',
+          Buffer.from(JSON.stringify({
+            type: 'JOIN_RESULT',
+            userId: member.user_id,
+            status,
+            familyName: member.family?.name || 'Gia đình'
+          }))
+        );
+      }
+    } catch (err) {
+      console.error('RabbitMQ publish error (family):', err);
+    }
   },
 
   async getUserFamilies(userId: string) {

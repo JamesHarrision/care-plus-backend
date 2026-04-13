@@ -127,4 +127,60 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
   return res.status(200).json({ status: 'success', data: userInfo });
 });
 
+/**
+ * @openapi
+ * /api/user/device-token:
+ *   post:
+ *     tags:
+ *       - User
+ *     summary: Cập nhật FCM device token
+ *     description: Endpoint này lưu FCM device token của user vào bảng FamilyMember (tìm theo user_id). Dùng để sau này worker gửi push notification.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - deviceToken
+ *             properties:
+ *               deviceToken:
+ *                 type: string
+ *                 description: FCM token để gửi push notification
+ *     responses:
+ *       '200':
+ *         description: Cập nhật thành công
+ *       '401':
+ *         description: Chưa xác thực
+ */
+router.post('/device-token', requireAuth, async (req: AuthRequest, res) => {
+  const { deviceToken } = req.body;
+  if (!deviceToken) {
+    return res.status(400).json({ status: 'error', message: 'deviceToken is required' });
+  }
+
+  const userId = req.user?.id;
+  if (!userId) {
+    return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+  }
+
+  try {
+    const { prisma } = await import('../config/prisma.config');
+    await prisma.familyMember.updateMany({
+      where: { user_id: userId },
+      data: { device_token: deviceToken }
+    });
+
+    return res.status(200).json({
+      status: 'success',
+      data: { message: 'Cập nhật device token thành công' }
+    });
+  } catch (error) {
+    console.error('Lỗi khi cập nhật device token:', error);
+    return res.status(500).json({ status: 'error', message: 'Internal server error' });
+  }
+});
+
 export default router;

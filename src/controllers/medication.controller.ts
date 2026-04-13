@@ -47,6 +47,23 @@ export const createMedicationSchedule = async (req: Request, res: Response): Pro
 
     const savedSchedule = await newSchedule.save();
 
+    // Push vào RabbitMQ queue notifications.medication
+    try {
+      const { getChannel } = await import('../config/rabbitmq.config');
+      const medicationName = medications[0]?.name || 'Thuốc';
+      getChannel().sendToQueue(
+        'notifications.medication',
+        Buffer.from(JSON.stringify({
+          deviceToken: familyMember.device_token,
+          reminderMessage,
+          medicationName,
+          scheduleId: savedSchedule._id
+        }))
+      );
+    } catch (err) {
+      console.error('RabbitMQ publish error (medication):', err);
+    }
+
     res.status(201).json({
       status: 'success',
       data: {
