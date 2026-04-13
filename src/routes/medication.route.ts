@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { createMedicationSchedule } from '../controllers/medication.controller';
+import { createMedicationSchedule, getMedicationsByMember, updateMedicationSchedule, deleteMedicationSchedule } from '../controllers/medication.controller';
 import { requireAuth, requireFamilyContext } from '../middlewares/auth.middleware';
 
 const router = Router({ mergeParams: true });
@@ -105,5 +105,184 @@ const router = Router({ mergeParams: true });
  *         description: Internal Server Error.
  */
 router.post('/', requireAuth, requireFamilyContext(["OWNER", "MEMBER"]), createMedicationSchedule);
+
+/**
+ * @openapi
+ * /api/family/{familyId}/members/{memberId}/medications:
+ *   get:
+ *     tags:
+ *       - Medication
+ *     summary: Get medication schedules
+ *     description: Retrieve all active medication schedules for a family member.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Family identifier
+ *       - in: path
+ *         name: memberId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Family member identifier
+ *     responses:
+ *       '200':
+ *         description: Medication schedules retrieved successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     schedules:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *       '400':
+ *         description: Missing required fields or bad request.
+ *       '404':
+ *         description: Family member not found.
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.get('/', requireAuth, requireFamilyContext(["OWNER", "MEMBER"]), getMedicationsByMember);
+
+/**
+ * @openapi
+ * /api/family/{familyId}/members/{memberId}/medications/{id}:
+ *   patch:
+ *     tags:
+ *       - Medication
+ *     summary: Update a medication schedule
+ *     description: Updates an existing medication schedule. Excludes family_id and family_member_id from changes.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Family identifier
+ *       - in: path
+ *         name: memberId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Family member identifier
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Medication schedule ID
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               start_date:
+ *                 type: string
+ *                 format: date-time
+ *               end_date:
+ *                 type: string
+ *                 format: date-time
+ *                 nullable: true
+ *               medications:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *     responses:
+ *       '200':
+ *         description: Medication schedule updated successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     schedule:
+ *                       type: object
+ *       '400':
+ *         description: Bad request (e.g. invalid ID or unauthorized).
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.patch('/:id', requireAuth, requireFamilyContext(["OWNER", "MEMBER"]), updateMedicationSchedule);
+
+/**
+ * @openapi
+ * /api/family/{familyId}/members/{memberId}/medications/{id}:
+ *   delete:
+ *     tags:
+ *       - Medication
+ *     summary: Delete a medication schedule
+ *     description: Soft deletes a medication schedule by setting is_active to false.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Family identifier
+ *       - in: path
+ *         name: memberId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *         description: Family member identifier
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Medication schedule ID
+ *     responses:
+ *       '200':
+ *         description: Medication schedule deleted successfully.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *                       example: Xóa lịch uống thuốc thành công
+ *       '400':
+ *         description: Bad request (e.g. invalid ID or unauthorized).
+ *       '500':
+ *         description: Internal Server Error.
+ */
+router.delete('/:id', requireAuth, requireFamilyContext(["OWNER", "MEMBER"]), deleteMedicationSchedule);
 
 export default router;
