@@ -8,6 +8,7 @@ import familyRoutes from './routes/family.route';
 import userRoutes from './routes/user.route';
 import aiRoutes from './routes/ai.route';
 import medicationStandaloneRoutes from './routes/medication-standalone.route';
+import emergencyInfoRoutes from './routes/emergency-info.route';
 
 import startSwagger from './config/swagger.config';
 
@@ -61,6 +62,7 @@ startSwagger(app);
 app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
 app.use('/api/user', userRoutes);
+app.use('/api/users', emergencyInfoRoutes);
 app.use('/api/ai', aiRoutes);
 app.use('/api/medications', medicationStandaloneRoutes);
 

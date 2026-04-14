@@ -2,6 +2,7 @@ import EmergencyInfo, {
   IEmergencyContact,
   IEmergencyInfo,
 } from "../models/emergency-info.model";
+import redisClient from "../config/redis.config";
 
 type EmergencyInfoPayload = {
   user_id: string;
@@ -19,6 +20,18 @@ export const emergencyInfoRepository = {
   async findByUserId(userId: string): Promise<IEmergencyInfo | null> {
     // Mỗi user chỉ có một hồ sơ emergency info, nên truy vấn theo user_id là đủ.
     return await EmergencyInfo.findOne({ user_id: userId });
+  },
+
+  async getUserIdByQuickAccessPublicId(publicId: string): Promise<string | null> {
+    return await redisClient.get(`quick:${publicId}`);
+  },
+
+  async saveQuickAccessPublicId(
+    publicId: string,
+    userId: string,
+    ttlSeconds: number,
+  ) {
+    return await redisClient.set(`quick:${publicId}`, userId, { EX: ttlSeconds });
   },
 
   async create(data: EmergencyInfoPayload): Promise<IEmergencyInfo> {
