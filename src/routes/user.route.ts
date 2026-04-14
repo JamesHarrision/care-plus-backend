@@ -115,14 +115,15 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
   const user = req.user;
   // Chỉ check nếu user tồn tại, vì requireAuth đã đảm bảo điều này. Dùng ở file entry
 
-  const account = await userRepository.findById(req.user?.id as string);
+  const account = await userRepository.findById(req.user?.id as string, true);
   if (!account) {
     return res.status(404).json({ status: 'error', message: 'Không tồn tại người dùng.' });
   }
-  const { password_hash, ...rest } = account;
+  const { password_hash, familyMembers, ...rest } = account;
   const userInfo = {
     ...user,
     ...rest,
+    family: familyMembers,
   }; // Không trả về password
   return res.status(200).json({ status: 'success', data: userInfo });
 });
@@ -170,12 +171,12 @@ router.post('/device-token', requireAuth, async (req: AuthRequest, res) => {
     const { prisma } = await import('../config/prisma.config');
     await prisma.familyMember.updateMany({
       where: { user_id: userId },
-      data: { device_token: deviceToken }
+      data: { device_token: deviceToken },
     });
 
     return res.status(200).json({
       status: 'success',
-      data: { message: 'Cập nhật device token thành công' }
+      data: { message: 'Cập nhật device token thành công' },
     });
   } catch (error) {
     console.error('Lỗi khi cập nhật device token:', error);
