@@ -1,8 +1,22 @@
 import { prisma } from '../config/prisma.config';
 
 export const userRepository = {
-  async findById(id: string) {
-    return prisma.user.findUnique({ where: { id } });
+  async findById(id: string, familyProjection = false) {
+    return prisma.user.findUnique({
+      where: { id },
+      include: familyProjection
+        ? {
+            familyMembers: {
+              select: {
+                family_id: true,
+                family_role: true,
+                family_relation: true,
+                family: true,
+              },
+            },
+          }
+        : {},
+    });
   },
 
   async updatePasswordByEmail(email: string, password_hash: string) {
