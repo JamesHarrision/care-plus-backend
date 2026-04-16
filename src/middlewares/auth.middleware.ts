@@ -3,6 +3,7 @@ import { NextFunction, Response } from 'express';
 import { AuthRequest } from '../interfaces/interfaces';
 import { authService } from '../services/auth.service';
 import { TokenUtil } from '../utils/JwtToken.util';
+import { familyRepository } from '../repositories/family.repository';
 
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
@@ -68,4 +69,28 @@ export const requireFamilyContext = (allowedRoles: ('OWNER' | 'MEMBER')[]) => {
       return res.status(status).json({ status: 'error', message });
     }
   };
+};
+
+/**
+ * This checks:
+ *
+ * - User must be authenticated (have a valid access token) (already handled by requireAuth)
+ *
+ * - Chỉ cho phép thao tác các hoạt động nguy hiểm như xóa ..., khi:
+ * + Nếu là chủ nhà
+ * + Hoặc là người dùng cá nhân: không thuộc gia đình nào cả (tức là không có family context)
+ *
+ */
+export const requireFamilyContextDanger = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  // Lấy thông tin của user từ req.user
+  const id = req.user?.id;
+  // Kiểm tra trong bảng family_member xem user này có thuộc gia đình nào không
+  const { membership, isOwner } = await familyRepository.hasFamily(id as string);
+  if (membership && !isOwner) {
+    return res.status(403).json({
+      status: 'error',
+      message: 'Bạn không có quyền thực hiện hành động này',
+    });
+  }
+  return next();
 };
