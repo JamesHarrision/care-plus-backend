@@ -583,25 +583,15 @@ router.post('/forgot-password', authController.forgotPassword);
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               required:
- *                 - message
- *               properties:
- *                 message:
- *                   type: string
- *                   example: Đổi mật khẩu thành công
+ *               $ref: '#/components/schemas/ResetPasswordResponse'
+ *             example:
+ *               message: Đổi mật khẩu thành công
  *       '400':
  *         description: OTP invalid or expired.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
+ *               $ref: '#/components/schemas/ErrorResponse'
  *             examples:
  *               otpExpired:
  *                 value:
@@ -613,6 +603,13 @@ router.post('/forgot-password', authController.forgotPassword);
  *                   message: Mã OTP không chính xác
  *       '500':
  *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Lỗi máy chủ
  */
 router.post('/reset-password', authController.resetPassword);
 
