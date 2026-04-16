@@ -29,46 +29,7 @@ const router = Router();
  *                   type: string
  *                   example: success
  *                 data:
- *                   type: object
- *                   required:
- *                     - id
- *                     - role
- *                     - full_name
- *                     - system_role
- *                     - is_active
- *                     - created_at
- *                     - updated_at
- *                   properties:
- *                     id:
- *                       type: string
- *                       format: uuid
- *                     role:
- *                       type: string
- *                       enum:
- *                         - ADMIN
- *                         - USER
- *                     full_name:
- *                       type: string
- *                     phone:
- *                       type: string
- *                       nullable: true
- *                     email:
- *                       type: string
- *                       format: email
- *                       nullable: true
- *                     system_role:
- *                       type: string
- *                       enum:
- *                         - ADMIN
- *                         - USER
- *                     is_active:
- *                       type: boolean
- *                     created_at:
- *                       type: string
- *                       format: date-time
- *                     updated_at:
- *                       type: string
- *                       format: date-time
+ *                   $ref: '#/components/schemas/UserMeProfile'
  *             example:
  *               status: success
  *               data:
@@ -81,30 +42,33 @@ const router = Router();
  *                 is_active: true
  *                 created_at: '2026-04-10T00:00:00.000Z'
  *                 updated_at: '2026-04-10T00:00:00.000Z'
+ *                 family:
+ *                   - family_id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
+ *                     family_role: OWNER
+ *                     family_relation: null
+ *                     family:
+ *                       id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
+ *                       name: Gia đình Nguyễn Văn A
+ *                       address: 123 Đường ABC, TP.HCM
+ *                       invite_code: null
+ *                       invite_code_exp: null
+ *                       created_at: '2026-04-10T00:00:00.000Z'
+ *                       updated_at: '2026-04-10T00:00:00.000Z'
  *       '401':
  *         description: Missing or invalid access token.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '404':
  *         description: User account not found.
  *         content:
  *           application/json:
  *             schema:
- *               type: object
- *               properties:
- *                 status:
- *                   type: string
- *                   example: error
- *                 message:
- *                   type: string
+ *               $ref: '#/components/schemas/ErrorResponse'
  *             example:
  *               status: error
  *               message: Không tồn tại người dùng.
@@ -153,8 +117,50 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
  *     responses:
  *       '200':
  *         description: Cập nhật thành công
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   $ref: '#/components/schemas/DeviceTokenResponse'
+ *             example:
+ *               status: success
+ *               data:
+ *                 message: Cập nhật device token thành công
+ *       '400':
+ *         description: deviceToken is required.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: deviceToken is required
  *       '401':
  *         description: Chưa xác thực
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Unauthorized
+ *       '500':
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Internal server error
  */
 router.post('/device-token', requireAuth, async (req: AuthRequest, res) => {
   const { deviceToken } = req.body;

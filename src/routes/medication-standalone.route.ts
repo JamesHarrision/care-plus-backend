@@ -28,22 +28,51 @@ const router = Router();
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
  *                   type: object
+ *                   required:
+ *                     - message
  *                   properties:
  *                     message:
  *                       type: string
- *                       example: Xác nhận uống thuốc thành công
+ *             example:
+ *               status: success
+ *               data:
+ *                 message: Xác nhận uống thuốc thành công
  *       '400':
  *         description: Bad request (e.g. invalid ID).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Lịch uống thuốc không tồn tại
  *       '401':
  *         description: Unauthorized.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Unauthorized
  *       '500':
  *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Internal Server Error
  */
 router.post('/:id/confirm-taken', requireAuth, confirmTaken);
 

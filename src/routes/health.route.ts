@@ -1,12 +1,12 @@
-import { Router } from "express";
-import { requireAuth, requireFamilyContext } from "../middlewares/auth.middleware";
-import { healthRecordController } from "../controllers/health-record.controller";
+import { Router } from 'express';
+import { requireAuth } from '../middlewares/auth.middleware';
+import { healthRecordController } from '../controllers/health-record.controller';
 
 const router = Router({ mergeParams: true });
 
 /**
  * @openapi
- * /api/family/{familyId}/members/{memberId}/health:
+ * /api/family/members/{memberId}/health:
  *   get:
  *     tags:
  *       - HealthRecords
@@ -15,12 +15,6 @@ const router = Router({ mergeParams: true });
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: familyId
- *         required: true
- *         schema:
- *           type: string
- *         description: Family identifier (UUID)
  *       - in: path
  *         name: memberId
  *         required: true
@@ -43,18 +37,66 @@ const router = Router({ mergeParams: true });
  *     responses:
  *       '200':
  *         description: Successfully retrieved records.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   required:
+ *                     - records
+ *                   properties:
+ *                     records:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/HealthRecord'
+ *             example:
+ *               status: success
+ *               data:
+ *                 records:
+ *                   - _id: 66d1f4f0d6c2a011d4f90e21
+ *                     family_member_id: 2b9e8d1b-9b0f-4e7f-9dd0-5b3d7f9af7a1
+ *                     updated_by_user_id: 7b8a0b11-4d27-4b17-9b91-0fd05b26d301
+ *                     type: blood_pressure
+ *                     value:
+ *                       systolic: 120
+ *                       diastolic: 80
+ *                     unit: mmHg
+ *                     note: Đo sau khi ăn
+ *                     recorded_at: '2026-04-16T08:00:00.000Z'
+ *                     created_at: '2026-04-16T08:01:00.000Z'
+ *                     updated_at: '2026-04-16T08:01:00.000Z'
  *       '401':
  *         description: Unauthorized.
- *       '403':
- *         description: Forbidden (not part of family).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '500':
  *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Lỗi máy chủ
  */
-router.get('/', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']), healthRecordController.getHealthRecords);
+router.get('/', requireAuth, healthRecordController.getHealthRecords);
 
 /**
  * @openapi
- * /api/family/{familyId}/members/{memberId}/health:
+ * /api/family/members/{memberId}/health:
  *   post:
  *     tags:
  *       - HealthRecords
@@ -63,12 +105,6 @@ router.get('/', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']), healthRe
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: familyId
- *         required: true
- *         schema:
- *           type: string
- *         description: Family identifier
  *       - in: path
  *         name: memberId
  *         required: true
@@ -91,7 +127,10 @@ router.get('/', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']), healthRe
  *                 example: blood_pressure
  *               value:
  *                 type: object
- *                 example: { "systolic": 120, "diastolic": 80 }
+ *                 additionalProperties: true
+ *                 example:
+ *                   systolic: 120
+ *                   diastolic: 80
  *               unit:
  *                 type: string
  *                 example: mmHg
@@ -101,32 +140,92 @@ router.get('/', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']), healthRe
  *               recorded_at:
  *                 type: string
  *                 format: date-time
+ *             example:
+ *               type: blood_pressure
+ *               value:
+ *                 systolic: 120
+ *                 diastolic: 80
+ *               unit: mmHg
+ *               note: Đo sau khi ăn
+ *               recorded_at: '2026-04-16T08:00:00.000Z'
  *     responses:
  *       '201':
  *         description: Successfully created record.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   required:
+ *                     - record
+ *                   properties:
+ *                     record:
+ *                       $ref: '#/components/schemas/HealthRecord'
+ *             example:
+ *               status: success
+ *               data:
+ *                 record:
+ *                   _id: 66d1f4f0d6c2a011d4f90e22
+ *                   family_member_id: 2b9e8d1b-9b0f-4e7f-9dd0-5b3d7f9af7a1
+ *                   updated_by_user_id: 7b8a0b11-4d27-4b17-9b91-0fd05b26d301
+ *                   type: blood_pressure
+ *                   value:
+ *                     systolic: 120
+ *                     diastolic: 80
+ *                   unit: mmHg
+ *                   note: Đo sau khi ăn
+ *                   recorded_at: '2026-04-16T08:00:00.000Z'
+ *                   created_at: '2026-04-16T08:01:00.000Z'
+ *                   updated_at: '2026-04-16T08:01:00.000Z'
  *       '400':
  *         description: Missing required fields.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: 'Thiếu thông tin bắt buộc: type, value, unit'
+ *       '401':
+ *         description: Unauthorized.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '500':
  *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Lỗi máy chủ
  */
-router.post('/', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']), healthRecordController.createHealthRecord);
+router.post('/', requireAuth, healthRecordController.createHealthRecord);
 
 /**
  * @openapi
- * /api/family/{familyId}/members/{memberId}/health/{recordId}:
+ * /api/family/members/{memberId}/health/{recordId}:
  *   patch:
  *     tags:
  *       - HealthRecords
  *     summary: Update a health record
- *     description: Update an existing health record. Members can only update records created today. Owner can update anytime.
+ *     description: Update an existing health record.
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: familyId
- *         required: true
- *         schema:
- *           type: string
  *       - in: path
  *         name: memberId
  *         required: true
@@ -154,29 +253,75 @@ router.post('/', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']), healthR
  *     responses:
  *       '200':
  *         description: Successfully updated record.
- *       '403':
- *         description: Forbidden (cannot edit past records if not owner).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   required:
+ *                     - record
+ *                   properties:
+ *                     record:
+ *                       $ref: '#/components/schemas/HealthRecord'
+ *             example:
+ *               status: success
+ *               data:
+ *                 record:
+ *                   _id: 66d1f4f0d6c2a011d4f90e22
+ *                   family_member_id: 2b9e8d1b-9b0f-4e7f-9dd0-5b3d7f9af7a1
+ *                   updated_by_user_id: 7b8a0b11-4d27-4b17-9b91-0fd05b26d301
+ *                   type: blood_pressure
+ *                   value:
+ *                     systolic: 122
+ *                     diastolic: 82
+ *                   unit: mmHg
+ *                   note: Đã cập nhật
+ *                   recorded_at: '2026-04-16T08:00:00.000Z'
+ *                   created_at: '2026-04-16T08:01:00.000Z'
+ *                   updated_at: '2026-04-16T08:05:00.000Z'
+ *       '401':
+ *         description: Unauthorized.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '404':
  *         description: Record not found.
- */
-router.patch('/:recordId', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']), healthRecordController.updateHealthRecord);
-
-/**
- * @openapi
- * /api/family/{familyId}/members/{memberId}/health/{recordId}:
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Không tìm thấy bản ghi
+ *       '500':
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Lỗi máy chủ
  *   delete:
  *     tags:
  *       - HealthRecords
  *     summary: Delete a health record
- *     description: Delete a health record. Only the OWNER of the family context can perform this action.
+ *     description: Delete a health record.
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: familyId
- *         required: true
- *         schema:
- *           type: string
  *       - in: path
  *         name: memberId
  *         required: true
@@ -190,11 +335,58 @@ router.patch('/:recordId', requireAuth, requireFamilyContext(['OWNER', 'MEMBER']
  *     responses:
  *       '200':
  *         description: Successfully deleted.
- *       '403':
- *         description: Forbidden (OWNER only).
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   required:
+ *                     - message
+ *                   properties:
+ *                     message:
+ *                       type: string
+ *             example:
+ *               status: success
+ *               data:
+ *                 message: Xóa chỉ số thành công
+ *       '401':
+ *         description: Unauthorized.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '404':
  *         description: Record not found.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Không tìm thấy bản ghi
+ *       '500':
+ *         description: Internal server error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Lỗi máy chủ
  */
-router.delete('/:recordId', requireAuth, requireFamilyContext(['OWNER']), healthRecordController.deleteHealthRecord);
+router.patch('/:recordId', requireAuth, healthRecordController.updateHealthRecord);
+
+router.delete('/:recordId', requireAuth, healthRecordController.deleteHealthRecord);
 
 export default router;

@@ -33,32 +33,15 @@ const router = Router();
  *           application/json:
  *             schema:
  *               type: object
+ *               required:
+ *                 - status
+ *                 - data
  *               properties:
  *                 status:
  *                   type: string
  *                   example: success
  *                 data:
- *                   type: object
- *                   properties:
- *                     extracted:
- *                       type: array
- *                       items:
- *                         type: object
- *                         properties:
- *                           name:
- *                             type: string
- *                           dosage:
- *                             type: string
- *                           frequency:
- *                             type: string
- *                           bin:
- *                             type: string
- *                             nullable: true
- *                           days:
- *                             type: number
- *                             nullable: true
- *                     confidence:
- *                       type: number
+ *                   $ref: '#/components/schemas/PrescriptionScanResponse'
  *             example:
  *               status: success
  *               data:
@@ -71,10 +54,40 @@ const router = Router();
  *                 confidence: 0.95
  *       '400':
  *         description: No image file provided.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: No image file provided
  *       '422':
  *         description: Cannot extract prescription from image.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Không thể nhận diện toa thuốc từ ảnh
+ *       '401':
+ *         description: Unauthorized.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Token không hợp lệ hoặc đã hết hạn
  *       '500':
  *         description: Internal Server Error.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *             example:
+ *               status: error
+ *               message: Internal Server Error
  */
 router.post('/scan-prescription', requireAuth, upload.single('image'), scanPrescription);
 
