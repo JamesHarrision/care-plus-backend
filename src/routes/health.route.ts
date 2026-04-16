@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth } from '../middlewares/auth.middleware';
+import { requireAuth, requireFamilyContextDanger } from '../middlewares/auth.middleware';
 import { healthRecordController } from '../controllers/health-record.controller';
 
 const router = Router({ mergeParams: true });
@@ -387,6 +387,6 @@ router.post('/', requireAuth, healthRecordController.createHealthRecord);
  */
 router.patch('/:recordId', requireAuth, healthRecordController.updateHealthRecord);
 
-router.delete('/:recordId', requireAuth, healthRecordController.deleteHealthRecord);
+router.delete('/:recordId', requireAuth, requireFamilyContextDanger, healthRecordController.deleteHealthRecord);
 
 export default router;
