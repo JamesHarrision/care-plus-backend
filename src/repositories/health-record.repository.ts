@@ -1,11 +1,9 @@
 import { create } from 'node:domain';
-import HealthRecord from '../models/health-record.model'
+import HealthRecord from '../models/health-record.model';
 
 export const healthRecordRepository = {
-  async findMany(familyMemberId: string,
-    filters: { date?: string, type?: string }
-  ) {
-    const query: Record<string, any> = { family_member_id: familyMemberId }
+  async findMany(familyMemberId: string, filters: { date?: string; type?: string }) {
+    const query: Record<string, any> = { family_member_id: familyMemberId };
 
     if (filters.type) {
       query.type = filters.type;
@@ -24,7 +22,7 @@ export const healthRecordRepository = {
 
   async create(data: {
     family_member_id: string;
-    family_id: string;
+    // family_id: string;
     updated_by_user_id: string;
     type: string;
     value: Record<string, any>;
@@ -42,21 +40,17 @@ export const healthRecordRepository = {
   async update(
     recordId: string,
     data: {
-      value?: Record<string, any>
+      value?: Record<string, any>;
       unit?: string;
       note?: string;
-    }
+    },
   ) {
-    const updatedRecord = await HealthRecord.findByIdAndUpdate(
-      recordId,
-      data,
-      { new: true }
-    );
+    const updatedRecord = await HealthRecord.findByIdAndUpdate(recordId, data, { new: true });
 
-    return updatedRecord
+    return updatedRecord;
   },
 
   async delete(recordId: string) {
     return await HealthRecord.findByIdAndDelete(recordId);
-  }
-}
+  },
+};

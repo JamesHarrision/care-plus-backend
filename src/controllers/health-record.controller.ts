@@ -1,6 +1,6 @@
-import { Response } from "express";
-import { AuthRequest } from "../interfaces/interfaces";
-import { healthRecordService } from "../services/health-record.service";
+import { Response } from 'express';
+import { AuthRequest } from '../interfaces/interfaces';
+import { healthRecordService } from '../services/health-record.service';
 
 const ERROR_MAP: Record<string, { status: number; message: string }> = {
   RECORD_NOT_FOUND: { status: 404, message: 'Không tìm thấy bản ghi' },
@@ -23,18 +23,18 @@ export const healthRecordController = {
 
       const records = await healthRecordService.getRecords(memberId as string, {
         date: date as string,
-        type: type as string
+        type: type as string,
       });
 
       res.status(200).json({ status: 'success', data: { records } });
     } catch (error) {
-      handleError(res, error)
+      handleError(res, error);
     }
   },
 
   createHealthRecord: async (req: AuthRequest, res: Response) => {
     try {
-      const { familyId, memberId } = req.params;
+      const { memberId } = req.params;
       const { type, value, unit, note, recorded_at } = req.body;
 
       if (!type || !value || !unit) {
@@ -43,7 +43,7 @@ export const healthRecordController = {
 
       const record = await healthRecordService.createRecord({
         family_member_id: memberId as string,
-        family_id: familyId as string,
+        // family_id: familyId as string,
         updated_by_user_id: req.user!.id,
         type,
         value,
@@ -64,9 +64,7 @@ export const healthRecordController = {
       const familyRole = req.familyRole as 'OWNER' | 'MEMBER';
       const { value, unit, note } = req.body;
 
-      const record = await healthRecordService.updateRecord(
-        recordId as string,
-        familyRole, { value, unit, note });
+      const record = await healthRecordService.updateRecord(recordId as string, familyRole, { value, unit, note });
 
       res.status(200).json({ status: 'success', data: { record } });
     } catch (error) {
@@ -85,5 +83,5 @@ export const healthRecordController = {
     } catch (error) {
       handleError(res, error);
     }
-  }
-}
+  },
+};
