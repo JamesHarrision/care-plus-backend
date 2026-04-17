@@ -19,6 +19,13 @@ const ERROR_MAP: Record<string, { status: number; message: string }> = {
   WRONG_OLD_PASSWORD: { status: 400, message: 'Mật khẩu cũ không chính xác' },
   NO_TOKEN_PROVIDED: { status: 401, message: 'Không tìm thấy token trong header' },
   TOKEN_BLACKLISTED: { status: 401, message: 'Token đã bị vô hiệu hóa (Đăng xuất)' },
+
+  // Quick Login errors
+  DEVICE_NOT_REGISTERED: { status: 401, message: 'Thiết bị chưa được đăng ký đăng nhập nhanh' },
+  INVALID_DEVICE_TOKEN: { status: 401, message: 'Mã đăng nhập thiết bị không hợp lệ' },
+  DEVICE_REVOKED: { status: 401, message: 'Quyền đăng nhập trên thiết bị đã bị thu hồi' },
+  MEMBER_NOT_FOUND: { status: 404, message: 'Không tìm thấy thành viên' },
+  FAMILY_NOT_FOUND: { status: 404, message: 'Không tìm thấy gia đình' },
 };
 
 function handleError(res: Response, error: any) {
@@ -150,6 +157,31 @@ export class AuthController {
       await authService.changePassword(userId, req.body);
       res.status(200).json({ status: 'success', data: { message: 'Đổi mật khẩu thành công' } });
     } catch (error) {
+      handleError(res, error);
+    }
+  };
+
+  // =============== Quick Login (Device-Bound) ===============
+
+  public quickLoginByDevice = async (req: Request, res: Response) => {
+    try {
+      const { device_token, device_fingerprint } = req.body;
+      if (!device_token || !device_fingerprint) {
+        return res.status(400).json({ status: 'error', message: 'Thiếu device_token hoặc device_fingerprint' });
+      }
+      const result = await authService.quickLoginByDevice(device_token, device_fingerprint);
+      res.status(200).json({ status: 'success', data: result });
+    } catch (error: any) {
+      handleError(res, error);
+    }
+  };
+
+  public refreshQuickLoginToken = async (req: Request, res: Response) => {
+    try {
+      const { refreshToken } = req.body;
+      const tokens = await authService.refreshQuickLoginToken(refreshToken);
+      res.status(200).json({ status: 'success', data: tokens });
+    } catch (error: any) {
       handleError(res, error);
     }
   };

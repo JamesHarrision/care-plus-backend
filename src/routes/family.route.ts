@@ -765,6 +765,131 @@ router.get(
   familyController.getFamilyMembers,
 );
 
+// =============== Quick Login (Device-Bound) ===============
+
+/**
+ * @openapi
+ * /api/family/{familyId}/members/{memberId}/setup-device:
+ *   post:
+ *     tags:
+ *       - Quick Login
+ *     summary: Thiết lập đăng nhập nhanh cho thành viên
+ *     description: Chủ hộ thiết lập quick-login trên thiết bị của thành viên (người già/trẻ nhỏ). Trả về device_token chỉ 1 lần.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: memberId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - device_fingerprint
+ *             properties:
+ *               device_fingerprint:
+ *                 type: string
+ *                 example: fp_abc123xyz
+ *               device_name:
+ *                 type: string
+ *                 example: Điện thoại Samsung của Ông Năm
+ *     responses:
+ *       '201':
+ *         description: Thiết lập thành công, trả về device_token.
+ *       '400':
+ *         description: Thiếu device_fingerprint.
+ *       '403':
+ *         description: Không phải chủ hộ.
+ *       '404':
+ *         description: Không tìm thấy thành viên.
+ */
+router.post(
+  '/:familyId/members/:memberId/setup-device',
+  requireAuth,
+  requireFamilyContext(['OWNER']),
+  familyController.setupDeviceLogin,
+);
+
+/**
+ * @openapi
+ * /api/family/{familyId}/members/{memberId}/revoke-device:
+ *   delete:
+ *     tags:
+ *       - Quick Login
+ *     summary: Thu hồi quyền đăng nhập nhanh
+ *     description: Chủ hộ thu hồi quyền đăng nhập nhanh trên thiết bị của thành viên. Thiết bị sẽ không còn tự động đăng nhập được.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *       - in: path
+ *         name: memberId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: Thu hồi thành công.
+ *       '403':
+ *         description: Không phải chủ hộ.
+ *       '404':
+ *         description: Không tìm thấy thành viên.
+ */
+router.delete(
+  '/:familyId/members/:memberId/revoke-device',
+  requireAuth,
+  requireFamilyContext(['OWNER']),
+  familyController.revokeDeviceLogin,
+);
+
+/**
+ * @openapi
+ * /api/family/{familyId}/devices:
+ *   get:
+ *     tags:
+ *       - Quick Login
+ *     summary: Xem danh sách thiết bị đã thiết lập đăng nhập nhanh
+ *     description: Chủ hộ xem tất cả thiết bị đã được gán quick-login trong gia đình.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     responses:
+ *       '200':
+ *         description: Danh sách thiết bị.
+ *       '403':
+ *         description: Không phải chủ hộ.
+ */
+router.get(
+  '/:familyId/devices',
+  requireAuth,
+  requireFamilyContext(['OWNER']),
+  familyController.getFamilyDevices,
+);
+
 router.use('/:familyId/members/:memberId/medications', medicationRoutes);
 
 // Tách

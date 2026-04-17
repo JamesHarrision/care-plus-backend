@@ -142,4 +142,88 @@ export const familyRepository = {
     // });
     // return !!membership;
   },
+
+  // =============== Quick Login (Device-Bound) ===============
+
+  async findMemberById(memberId: string) {
+    return await prisma.familyMember.findUnique({
+      where: { id: memberId },
+      include: {
+        family: true,
+        user: {
+          select: { id: true, full_name: true },
+        },
+      },
+    });
+  },
+
+  async setupQuickLogin(
+    memberId: string,
+    data: {
+      quick_device_hash: string;
+      device_fingerprint: string;
+      display_name?: string;
+      device_name?: string;
+    },
+  ) {
+    return await prisma.familyMember.update({
+      where: { id: memberId },
+      data: {
+        quick_device_hash: data.quick_device_hash,
+        device_fingerprint: data.device_fingerprint,
+        display_name: data.display_name,
+        device_name: data.device_name,
+      },
+    });
+  },
+
+  async findMemberByFingerprint(fingerprint: string) {
+    return await prisma.familyMember.findFirst({
+      where: {
+        device_fingerprint: fingerprint,
+        quick_device_hash: { not: null },
+        join_status: JoinStatus.APPROVED,
+      },
+      include: {
+        family: true,
+      },
+    });
+  },
+
+  async updateQuickLoginAt(memberId: string) {
+    return await prisma.familyMember.update({
+      where: { id: memberId },
+      data: { quick_login_at: new Date() },
+    });
+  },
+
+  async revokeQuickLogin(memberId: string) {
+    return await prisma.familyMember.update({
+      where: { id: memberId },
+      data: {
+        quick_device_hash: null,
+        device_fingerprint: null,
+        device_name: null,
+        quick_login_at: null,
+      },
+    });
+  },
+
+  async getDevicesByFamily(familyId: string) {
+    return await prisma.familyMember.findMany({
+      where: {
+        family_id: familyId,
+        quick_device_hash: { not: null },
+      },
+      select: {
+        id: true,
+        display_name: true,
+        device_name: true,
+        device_fingerprint: true,
+        quick_login_at: true,
+        avatar_url: true,
+        family_relation: true,
+      },
+    });
+  },
 };

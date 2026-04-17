@@ -164,7 +164,7 @@ router.get('/me', requireAuth, async (req: AuthRequest, res) => {
  */
 router.post('/device-token', requireAuth, async (req: AuthRequest, res) => {
   const { deviceToken } = req.body;
-  if (!deviceToken) {
+  if (deviceToken === undefined) {
     return res.status(400).json({ status: 'error', message: 'deviceToken is required' });
   }
 

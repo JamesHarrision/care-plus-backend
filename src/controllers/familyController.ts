@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { familyService } from "../services/family.service";
+import { authService } from "../services/auth.service";
 import { AuthRequest } from "../interfaces/interfaces";
 
 export class FamilyController {
@@ -97,6 +98,73 @@ export class FamilyController {
       const members = await familyService.getFamilyMembers(familyId as string);
 
       res.status(200).json({ status: 'success', data: { members } });
+    } catch (error) {
+      res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
+    }
+  }
+
+  // =============== Quick Login (Device-Bound) ===============
+
+  public setupDeviceLogin = async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+      }
+
+      const { memberId } = req.params;
+      const { device_fingerprint, device_name } = req.body;
+
+      if (!device_fingerprint) {
+        return res.status(400).json({ status: 'error', message: 'Thiếu device_fingerprint' });
+      }
+
+      const result = await authService.setupDeviceLogin(userId, memberId as string, {
+        device_fingerprint,
+        device_name,
+      });
+
+      res.status(201).json({
+        status: 'success',
+        data: {
+          ...result,
+          message: 'Thiết lập đăng nhập nhanh thành công',
+        },
+      });
+    } catch (error: any) {
+      if (error.message === 'MEMBER_NOT_FOUND') return res.status(404).json({ status: 'error', message: 'Không tìm thấy thành viên' });
+      if (error.message === 'INSUFFICIENT_FAMILY_ROLE') return res.status(403).json({ status: 'error', message: 'Quyền hạn trong gia đình không đủ' });
+      res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
+    }
+  }
+
+  public revokeDeviceLogin = async (req: AuthRequest, res: Response) => {
+    try {
+      const userId = req.user?.id;
+      if (!userId) {
+        return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+      }
+
+      const { memberId } = req.params;
+      await familyService.revokeDeviceLogin(userId, memberId as string);
+
+      res.status(200).json({
+        status: 'success',
+        data: { message: 'Đã thu hồi quyền đăng nhập trên thiết bị' },
+      });
+    } catch (error: any) {
+      if (error.message === 'MEMBER_NOT_FOUND') return res.status(404).json({ status: 'error', message: 'Không tìm thấy thành viên' });
+      if (error.message === 'INSUFFICIENT_FAMILY_ROLE') return res.status(403).json({ status: 'error', message: 'Quyền hạn trong gia đình không đủ' });
+      res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
+    }
+  }
+
+  public getFamilyDevices = async (req: AuthRequest, res: Response) => {
+    try {
+      const { familyId } = req.params;
+      const devices = await familyService.getFamilyDevices(familyId as string);
+
+      res.status(200).json({ status: 'success', data: { devices } });
     } catch (error) {
       res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
     }

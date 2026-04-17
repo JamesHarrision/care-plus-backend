@@ -1,5 +1,5 @@
 import jwt from 'jsonwebtoken';
-import { JwtPayLoad } from '../interfaces/interfaces';
+import { JwtPayLoad, QuickLoginPayload } from '../interfaces/interfaces';
 
 const ACCESS_SECRET = process.env.JWT_ACCESS_SECRET;
 const REFRESH_SECRET = process.env.JWT_REFRESH_SECRET;
@@ -14,6 +14,15 @@ export const TokenUtil = {
       refreshToken: TokenUtil.signRefreshToken({ userId: user.userId }),
     };
     return tokens;
+  },
+
+  // Tạo token cho quick-login session (Device-Bound)
+  generateQuickLoginToken: (payload: QuickLoginPayload) => {
+    const tokenPayload = { memberId: payload.memberId, familyId: payload.familyId, loginType: 'quick_login' as const };
+    return {
+      accessToken: jwt.sign(tokenPayload, ACCESS_SECRET as string, { expiresIn: JWT_ACCESS_EXPIRES_IN }),
+      refreshToken: jwt.sign(tokenPayload, REFRESH_SECRET as string, { expiresIn: JWT_REFRESH_EXPIRES_IN }),
+    };
   },
 
   signAccessToken: (payload: JwtPayLoad): string => {
@@ -38,6 +47,15 @@ export const TokenUtil = {
 
   verifyAccessToken: (token: string) => {
     return jwt.verify(token, ACCESS_SECRET as string) as JwtPayLoad;
+  },
+
+  // Verify token cho quick-login session
+  verifyQuickLoginAccessToken: (token: string): QuickLoginPayload => {
+    return jwt.verify(token, ACCESS_SECRET as string) as QuickLoginPayload;
+  },
+
+  verifyQuickLoginRefreshToken: (token: string): QuickLoginPayload => {
+    return jwt.verify(token, REFRESH_SECRET as string) as QuickLoginPayload;
   },
 
   verifyRefreshToken: (token: string) => {

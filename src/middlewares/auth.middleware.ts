@@ -1,4 +1,5 @@
 import { SystemRole } from '@prisma/client';
+import jwt from 'jsonwebtoken';
 import { NextFunction, Response } from 'express';
 import { AuthRequest } from '../interfaces/interfaces';
 import { authService } from '../services/auth.service';
@@ -7,11 +8,39 @@ import { familyRepository } from '../repositories/family.repository';
 
 export const requireAuth = async (req: AuthRequest, res: Response, next: NextFunction) => {
   try {
-    const { valid, user } = await authService.checkValidAccessToken(req.headers.authorization);
-    if (!valid || !user) {
+    const tokenHeader = req.headers.authorization;
+    if (!tokenHeader) {
       return res.status(401).json({ status: 'error', message: 'Token không hợp lệ hoặc đã hết hạn' });
     }
-    req.user = user;
+
+    const token = TokenUtil.extractTokenFromHeader(tokenHeader);
+
+    // Check blacklist
+    const { getBlackList } = await import('../repositories/token.repository').then(m => m.tokenRepository);
+    const isBlacklisted = await getBlackList(token);
+    if (isBlacklisted) {
+      return res.status(401).json({ status: 'error', message: 'Token đã bị vô hiệu hóa (Đăng xuất)' });
+    }
+
+    // Decode token to check loginType
+    const rawDecoded = jwt.decode(token) as any;
+
+    if (rawDecoded?.loginType === 'quick_login') {
+      // Quick-login token → verify và set quickLoginMember
+      const decoded = TokenUtil.verifyQuickLoginAccessToken(token);
+      req.quickLoginMember = {
+        memberId: decoded.memberId,
+        familyId: decoded.familyId,
+      };
+    } else {
+      // Normal token → verify và set user (luồng hiện tại)
+      const { valid, user } = await authService.checkValidAccessToken(tokenHeader);
+      if (!valid || !user) {
+        return res.status(401).json({ status: 'error', message: 'Token không hợp lệ hoặc đã hết hạn' });
+      }
+      req.user = user;
+    }
+
     next();
   } catch (error: any) {
     const message =
@@ -21,6 +50,23 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
 
     return res.status(401).json({ status: 'error', message });
   }
+};
+
+/**
+ * Chặn quick-login member truy cập API yêu cầu tài khoản đầy đủ
+ * Ví dụ: đổi mật khẩu, quản lý tài khoản, tạo gia đình mới...
+ */
+export const requireFullAccount = (req: AuthRequest, res: Response, next: NextFunction) => {
+  if (req.quickLoginMember) {
+    return res.status(403).json({
+      status: 'error',
+      message: 'Tính năng này yêu cầu đăng nhập bằng tài khoản đầy đủ',
+    });
+  }
+  if (!req.user) {
+    return res.status(401).json({ status: 'error', message: 'Không thể xác thực danh tính người dùng' });
+  }
+  next();
 };
 
 export const requireSystemRole = async (roles: SystemRole[]) => {
@@ -39,6 +85,26 @@ export const requireFamilyContext = (allowedRoles: ('OWNER' | 'MEMBER')[]) => {
   return async (req: AuthRequest, res: Response, next: NextFunction) => {
     try {
       const { familyId } = req.params;
+
+      // Hỗ trợ cả quick-login member và user thường
+      if (req.quickLoginMember) {
+        // Quick-login: chỉ cho phép truy cập family mà member thuộc về
+        if (req.quickLoginMember.familyId !== familyId) {
+          return res.status(403).json({
+            status: 'error',
+            message: 'Bạn không phải là thành viên của gia đình này',
+          });
+        }
+        req.familyRole = 'MEMBER'; // Quick-login member luôn là MEMBER
+        if (!allowedRoles.includes('MEMBER')) {
+          return res.status(403).json({
+            status: 'error',
+            message: 'Quyền hạn trong gia đình không đủ',
+          });
+        }
+        return next();
+      }
+
       const userId = req.user?.id;
 
       if (!familyId || !userId) {
@@ -82,6 +148,14 @@ export const requireFamilyContext = (allowedRoles: ('OWNER' | 'MEMBER')[]) => {
  *
  */
 export const requireFamilyContextDanger = async (req: AuthRequest, res: Response, next: NextFunction) => {
+  // Quick-login members không được phép thao tác nguy hiểm
+  if (req.quickLoginMember) {
+    return res.status(403).json({
+      status: 'error',
+      message: 'Bạn không có quyền thực hiện hành động này',
+    });
+  }
+
   // Lấy thông tin của user từ req.user
   const id = req.user?.id;
   // Kiểm tra trong bảng family_member xem user này có thuộc gia đình nào không

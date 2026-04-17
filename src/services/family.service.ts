@@ -107,6 +107,33 @@ export const familyService = {
       avatar_url: m.avatar_url,
       joined_at: m.created_at
     }));
-  }
+  },
 
+  // =============== Quick Login (Device-Bound) ===============
+
+  async revokeDeviceLogin(ownerId: string, memberId: string) {
+    // Verify member tồn tại
+    const member = await familyRepository.findMemberById(memberId);
+    if (!member) throw new Error('MEMBER_NOT_FOUND');
+
+    // Verify owner là OWNER của family chứa member
+    const ownerMember = await familyRepository.findFamilyMember(member.family_id, ownerId);
+    if (!ownerMember || ownerMember.family_role !== 'OWNER') {
+      throw new Error('INSUFFICIENT_FAMILY_ROLE');
+    }
+
+    await familyRepository.revokeQuickLogin(memberId);
+  },
+
+  async getFamilyDevices(familyId: string) {
+    const devices = await familyRepository.getDevicesByFamily(familyId);
+    return devices.map(d => ({
+      member_id: d.id,
+      display_name: d.display_name,
+      device_name: d.device_name,
+      avatar_url: d.avatar_url,
+      family_relation: d.family_relation,
+      quick_login_at: d.quick_login_at,
+    }));
+  },
 }

@@ -881,4 +881,106 @@ router.post('/change-password', requireAuth, authController.changePassword);
  */
 router.post('/resend-verify-by-login', authController.resendVerifyByLogin);
 
+// =============== Quick Login (Device-Bound) ===============
+
+/**
+ * @openapi
+ * /api/auth/quick-login/device:
+ *   post:
+ *     tags:
+ *       - Quick Login
+ *     summary: Quick login bằng device token
+ *     description: Đăng nhập nhanh cho người già/trẻ nhỏ bằng device token đã được thiết lập bởi chủ hộ. Không cần tài khoản.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - device_token
+ *               - device_fingerprint
+ *             properties:
+ *               device_token:
+ *                 type: string
+ *                 description: Device token nhận được khi thiết lập.
+ *                 example: a1b2c3d4e5f6...
+ *               device_fingerprint:
+ *                 type: string
+ *                 description: Fingerprint duy nhất của thiết bị.
+ *                 example: fp_abc123xyz
+ *     responses:
+ *       '200':
+ *         description: Quick login thành công.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               required:
+ *                 - status
+ *                 - data
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     member:
+ *                       type: object
+ *                       properties:
+ *                         id:
+ *                           type: string
+ *                         display_name:
+ *                           type: string
+ *                         family_id:
+ *                           type: string
+ *                         family_role:
+ *                           type: string
+ *                         permissions:
+ *                           type: array
+ *                           items:
+ *                             type: string
+ *                     tokens:
+ *                       type: object
+ *                       properties:
+ *                         accessToken:
+ *                           type: string
+ *                         refreshToken:
+ *                           type: string
+ *       '400':
+ *         description: Thiếu thông tin bắt buộc.
+ *       '401':
+ *         description: Device token không hợp lệ hoặc thiết bị chưa đăng ký.
+ */
+router.post('/quick-login/device', authController.quickLoginByDevice);
+
+/**
+ * @openapi
+ * /api/auth/quick-login/refresh:
+ *   post:
+ *     tags:
+ *       - Quick Login
+ *     summary: Refresh token cho quick-login session
+ *     description: Cấp lại token mới cho phiên đăng nhập nhanh. Dùng khi accessToken hết hạn.
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - refreshToken
+ *             properties:
+ *               refreshToken:
+ *                 type: string
+ *     responses:
+ *       '200':
+ *         description: Token refreshed successfully.
+ *       '401':
+ *         description: Token không hợp lệ hoặc thiết bị đã bị thu hồi.
+ */
+router.post('/quick-login/refresh', authController.refreshQuickLoginToken);
+
 export default router;
+
