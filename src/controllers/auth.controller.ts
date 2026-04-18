@@ -114,7 +114,8 @@ export class AuthController {
         return res.status(400).json({ status: 'error', message: 'Không tìm thấy Access Token' });
       }
 
-      await authService.logout(token);
+      const { device_fingerprint } = req.body;
+      await authService.logout(token, device_fingerprint);
       res.status(200).json({ status: 'success', data: { message: 'Đăng xuất thành công' } });
     } catch (error: any) {
       handleError(res, error);

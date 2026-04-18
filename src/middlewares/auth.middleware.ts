@@ -28,9 +28,21 @@ export const requireAuth = async (req: AuthRequest, res: Response, next: NextFun
     if (rawDecoded?.loginType === 'quick_login') {
       // Quick-login token → verify và set quickLoginMember
       const decoded = TokenUtil.verifyQuickLoginAccessToken(token);
+
+      // Verify device còn tồn tại trong DB (Existence Check)
+      if (!decoded.deviceId) {
+        return res.status(401).json({ status: 'error', message: 'Phiên đăng nhập cũ không còn khả dụng, vui lòng đăng nhập lại' });
+      }
+
+      const device = await familyRepository.findDeviceById(decoded.deviceId);
+      if (!device) {
+        return res.status(401).json({ status: 'error', message: 'Quyền đăng nhập trên thiết bị đã bị thu hồi' });
+      }
+
       req.quickLoginMember = {
         memberId: decoded.memberId,
         familyId: decoded.familyId,
+        deviceId: decoded.deviceId,
       };
     } else {
       // Normal token → verify và set user (luồng hiện tại)

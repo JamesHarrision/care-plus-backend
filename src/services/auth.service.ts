@@ -129,13 +129,18 @@ export const authService = {
     return TokenUtil.generateToken(decoded);
   },
 
-  async logout(accessToken: string) {
+  async logout(accessToken: string, deviceFingerprint?: string) {
     const decoded = jwt.decode(accessToken) as jwt.JwtPayload;
     if (decoded?.exp) {
       const ttl = decoded.exp - Math.floor(Date.now() / 1000);
       if (ttl > 0) {
         await tokenRepository.blacklistToken(accessToken, ttl);
       }
+    }
+
+    // Nếu là quick-login session, revoke device token khỏi DB
+    if (deviceFingerprint) {
+      await familyRepository.revokeFingerprint(deviceFingerprint);
     }
   },
 
@@ -234,12 +239,11 @@ export const authService = {
     // 5. Hash bằng bcrypt
     const deviceHash = await passwordUtil.hashPassword(deviceToken);
 
-    // 5. Lưu vào DB
+    // 5. Lưu vào DB thông qua bảng QuickLoginDevice
     const displayName = member.display_name || member.user?.full_name || 'Thành viên';
     await familyRepository.setupQuickLogin(memberId, {
       quick_device_hash: deviceHash,
       device_fingerprint: data.device_fingerprint,
-      display_name: displayName,
       device_name: data.device_name,
     });
 
@@ -259,14 +263,16 @@ export const authService = {
    * Verify token, cấp JWT với QuickLoginPayload
    */
   async quickLoginByDevice(deviceToken: string, deviceFingerprint: string) {
-    // 1. Tìm member by fingerprint
-    const member = await familyRepository.findMemberByFingerprint(deviceFingerprint);
-    if (!member || !member.quick_device_hash) {
+    // 1. Tìm device by fingerprint
+    const device = await familyRepository.findDeviceByFingerprint(deviceFingerprint);
+    if (!device || !device.device_hash) {
       throw new Error('DEVICE_NOT_REGISTERED');
     }
 
+    const member = device.familyMember;
+
     // 2. Verify device_token bằng bcrypt
-    const isValid = await passwordUtil.comparePassword(deviceToken, member.quick_device_hash);
+    const isValid = await passwordUtil.comparePassword(deviceToken, device.device_hash);
     if (!isValid) {
       throw new Error('INVALID_DEVICE_TOKEN');
     }
@@ -276,15 +282,16 @@ export const authService = {
       throw new Error('FAMILY_NOT_FOUND');
     }
 
-    // 4. Cấp JWT với QuickLoginPayload
+    // 4. Cấp JWT với QuickLoginPayload (bao gồm deviceId)
     const tokens = TokenUtil.generateQuickLoginToken({
       memberId: member.id,
       familyId: member.family_id,
+      deviceId: device.id,
       loginType: 'quick_login',
     });
 
-    // 5. Cập nhật quick_login_at
-    await familyRepository.updateQuickLoginAt(member.id);
+    // 5. Cập nhật last_login_at
+    await familyRepository.updateQuickLoginAt(device.id);
 
     return {
       member: {
@@ -310,15 +317,16 @@ export const authService = {
       throw new Error('INVALID_REFRESH_TOKEN');
     }
 
-    // Verify member còn có quick-login active
-    const member = await familyRepository.findMemberById(decoded.memberId);
-    if (!member || !member.quick_device_hash) {
+    // Verify device record còn tồn tại trong database (Existence Check)
+    const device = await familyRepository.findDeviceById(decoded.deviceId);
+    if (!device) {
       throw new Error('DEVICE_REVOKED');
     }
 
     return TokenUtil.generateQuickLoginToken({
       memberId: decoded.memberId,
       familyId: decoded.familyId,
+      deviceId: decoded.deviceId,
       loginType: 'quick_login',
     });
   },
