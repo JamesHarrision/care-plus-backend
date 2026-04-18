@@ -8,6 +8,7 @@ export const userRepository = {
         ? {
             familyMembers: {
               select: {
+                id: true,
                 family_id: true,
                 family_role: true,
                 family_relation: true,
