@@ -77,6 +77,7 @@ model FamilyMember {
   device_token    String?   @db.VarChar(255) // FCM token để push notification
   created_at      DateTime  @default(now())
 
+
   // === Quick Login (Device-Bound Session) ===
   display_name       String?   @db.VarChar(100) // Tên hiển thị: "Ông Năm", "Bé An"
   quick_device_hash  String?   @db.VarChar(255) // Hash của device_token cho quick login
@@ -84,9 +85,12 @@ model FamilyMember {
   device_name        String?   @db.VarChar(100) // "iPhone của Ông Năm"
   quick_login_at     DateTime? // Lần quick-login gần nhất
 
+
   // Khóa ngoại
   family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
   user   User?  @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  quickLoginDevice QuickLoginDevice?
 
   quickLoginDevice QuickLoginDevice?
 
