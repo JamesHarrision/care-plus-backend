@@ -656,6 +656,51 @@ router.patch(
 
 /**
  * @openapi
+ * /api/family/{familyId}/members/guest:
+ *   post:
+ *     tags:
+ *       - Family
+ *     summary: Tạo thành viên phụ (Guest Member)
+ *     description: Chủ hộ tạo trực tiếp một thành viên không có tài khoản hệ thống (không cần email/SĐT). Trạng thái sẽ là APPROVED ngay lập tức.
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: familyId
+ *         required: true
+ *         schema:
+ *           type: string
+ *           format: uuid
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - displayName
+ *             properties:
+ *               displayName:
+ *                 type: string
+ *                 example: Ông Nội
+ *               relation:
+ *                 type: string
+ *                 example: Ông
+ *     responses:
+ *       '201':
+ *         description: Tạo thành viên thành công.
+ *       '403':
+ *         description: Không có quyền chủ hộ.
+ */
+router.post(
+  '/:familyId/members/guest',
+  requireAuth,
+  requireFamilyContext(['OWNER']),
+  familyController.createGuestMember,
+);
+
+/**
+ * @openapi
  * /api/family/{familyId}/members:
  *   get:
  *     tags:

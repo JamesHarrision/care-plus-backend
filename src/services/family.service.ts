@@ -94,12 +94,25 @@ export const familyService = {
     }));
   },
 
+  async getQuickLoginFamilies(memberId: string) {
+    const member = await familyRepository.findMemberById(memberId);
+    if (!member) return [];
+
+    return [{
+      family_id: member.family_id,
+      family_name: member.family.name,
+      family_address: member.family.address,
+      family_role: member.family_role,
+      joined_at: member.created_at
+    }];
+  },
+
   async getFamilyMembers(familyId: string) {
     const members = await familyRepository.getFamilyMembers(familyId);
     return members.map(m => ({
       member_id: m.id,
       user_id: m.user_id,
-      full_name: m.user?.full_name || 'Hồ sơ chưa liên kết tài khoản',
+      full_name: m.display_name || m.user?.full_name || 'Hồ sơ khách',
       email: m.user?.email,
       phone: m.user?.phone,
       family_role: m.family_role,
@@ -136,4 +149,7 @@ export const familyService = {
       quick_login_at: d.quick_login_at,
     }));
   },
-}
+  async createGuestMember(familyId: string, displayName: string, relation?: string) {
+    return await familyRepository.createGuestMember(familyId, displayName, relation);
+  },
+};

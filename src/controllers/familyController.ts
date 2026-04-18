@@ -80,14 +80,23 @@ export class FamilyController {
 
   public getUserFamilies = async (req: AuthRequest, res: Response) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+      let families = [];
+
+      if (req.quickLoginMember) {
+        // Case Quick Login: Lấy gia đình duy nhất của member
+        families = await familyService.getQuickLoginFamilies(req.quickLoginMember.memberId);
+      } else {
+        // Case Normal User: Lấy danh sách gia đình của user
+        const userId = req.user?.id;
+        if (!userId) {
+          return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        }
+        families = await familyService.getUserFamilies(userId);
       }
 
-      const families = await familyService.getUserFamilies(userId);
       res.status(200).json({ status: 'success', data: { families } });
     } catch (error) {
+      console.error('Lỗi khi lấy danh sách gia đình:', error);
       res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
     }
   }
@@ -166,6 +175,24 @@ export class FamilyController {
 
       res.status(200).json({ status: 'success', data: { devices } });
     } catch (error) {
+      res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
+    }
+  }
+
+  public createGuestMember = async (req: AuthRequest, res: Response) => {
+    try {
+      const { familyId } = req.params;
+      const { displayName, relation } = req.body;
+
+      if (!displayName) {
+        return res.status(400).json({ status: 'error', message: 'Tên hiển thị không được để trống' });
+      }
+
+      const member = await familyService.createGuestMember(familyId as string, displayName, relation);
+
+      res.status(201).json({ status: "success", data: { member } });
+    } catch (error) {
+      console.error('Lỗi khi tạo thành viên phụ:', error);
       res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
     }
   }

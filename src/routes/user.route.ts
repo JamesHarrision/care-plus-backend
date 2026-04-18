@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { requireAuth } from '../middlewares/auth.middleware';
 import { AuthRequest } from '../interfaces/interfaces';
 import { userRepository } from '../repositories/user.repository';
+import { familyRepository } from '../repositories/family.repository';
 const router = Router();
 
 /**
@@ -76,19 +77,56 @@ const router = Router();
  *         description: Internal server error.
  */
 router.get('/me', requireAuth, async (req: AuthRequest, res) => {
-  const user = req.user;
-  // Chỉ check nếu user tồn tại, vì requireAuth đã đảm bảo điều này. Dùng ở file entry
+  // Case 1: Quick Login Member
+  if (req.quickLoginMember) {
+    const member = await familyRepository.findMemberById(req.quickLoginMember.memberId);
+    if (!member) {
+      return res.status(404).json({ status: 'error', message: 'Không tồn tại thành viên gia đình.' });
+    }
 
-  const account = await userRepository.findById(req.user?.id as string, true);
+    // Trả về profile tương thích cho quick-login member
+    const userInfo = {
+      id: member.id,
+      full_name: member.display_name || member.user?.full_name || 'Thành viên gia đình',
+      phone: member.user?.phone || null,
+      email: member.user?.email || null,
+      system_role: 'USER', // Quick login member mặc định là USER
+      is_active: true,
+      avatar_url: member.user?.avatar_url || null,
+      created_at: member.created_at,
+      family: [
+        {
+          family_id: member.family_id,
+          family_role: member.family_role,
+          family_relation: member.family_relation,
+          family: member.family,
+        },
+      ],
+      loginType: 'quick_login',
+    };
+
+    return res.status(200).json({ status: 'success', data: userInfo });
+  }
+
+  // Case 2: Normal User
+  const user = req.user;
+  if (!user?.id) {
+    return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+  }
+
+  const account = await userRepository.findById(user.id, true);
   if (!account) {
     return res.status(404).json({ status: 'error', message: 'Không tồn tại người dùng.' });
   }
+
   const { password_hash, familyMembers, ...rest } = account;
   const userInfo = {
     ...user,
     ...rest,
     family: familyMembers,
-  }; // Không trả về password
+    loginType: 'full',
+  };
+
   return res.status(200).json({ status: 'success', data: userInfo });
 });
 
@@ -168,6 +206,26 @@ router.post('/device-token', requireAuth, async (req: AuthRequest, res) => {
     return res.status(400).json({ status: 'error', message: 'deviceToken is required' });
   }
 
+  // Case 1: Quick Login Member
+  if (req.quickLoginMember) {
+    try {
+      const { prisma } = await import('../config/prisma.config');
+      await prisma.familyMember.update({
+        where: { id: req.quickLoginMember.memberId },
+        data: { device_token: deviceToken },
+      });
+
+      return res.status(200).json({
+        status: 'success',
+        data: { message: 'Cập nhật FCM device token cho thiết bị thành công' },
+      });
+    } catch (error) {
+      console.error('Lỗi khi cập nhật device token (quick login):', error);
+      return res.status(500).json({ status: 'error', message: 'Internal server error' });
+    }
+  }
+
+  // Case 2: Normal User
   const userId = req.user?.id;
   if (!userId) {
     return res.status(401).json({ status: 'error', message: 'Unauthorized' });

@@ -224,10 +224,14 @@ export const authService = {
       throw new Error('INSUFFICIENT_FAMILY_ROLE');
     }
 
-    // 3. Tạo device_token random 256-bit
+    // 3. Đảm bảo 1 thiết bị chỉ gán cho 1 người (1-to-1 mapping)
+    // Nếu fingerprint này đã được gán cho ai đó, thu hồi quyền của họ trước
+    await familyRepository.revokeFingerprint(data.device_fingerprint);
+
+    // 4. Tạo device_token random 256-bit
     const deviceToken = crypto.randomBytes(32).toString('hex');
 
-    // 4. Hash bằng bcrypt
+    // 5. Hash bằng bcrypt
     const deviceHash = await passwordUtil.hashPassword(deviceToken);
 
     // 5. Lưu vào DB

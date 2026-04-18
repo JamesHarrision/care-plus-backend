@@ -151,7 +151,7 @@ export const familyRepository = {
       include: {
         family: true,
         user: {
-          select: { id: true, full_name: true },
+          select: { id: true, full_name: true, phone: true, email: true, avatar_url: true },
         },
       },
     });
@@ -223,6 +223,30 @@ export const familyRepository = {
         quick_login_at: true,
         avatar_url: true,
         family_relation: true,
+      },
+    });
+  },
+  async createGuestMember(familyId: string, displayName: string, relation?: string) {
+    return await prisma.familyMember.create({
+      data: {
+        family_id: familyId,
+        user_id: null,
+        display_name: displayName,
+        family_role: 'MEMBER',
+        family_relation: relation,
+        join_status: JoinStatus.APPROVED,
+      },
+    });
+  },
+
+  async revokeFingerprint(fingerprint: string) {
+    return await prisma.familyMember.updateMany({
+      where: { device_fingerprint: fingerprint },
+      data: {
+        quick_device_hash: null,
+        device_fingerprint: null,
+        device_name: null,
+        quick_login_at: null,
       },
     });
   },
