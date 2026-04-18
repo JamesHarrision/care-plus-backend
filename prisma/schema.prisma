@@ -77,11 +77,20 @@ model FamilyMember {
   device_token    String?   @db.VarChar(255) // FCM token để push notification
   created_at      DateTime  @default(now())
 
-  display_name String? @db.VarChar(100) // Tên hiển thị: "Ông Năm", "Bé An"
+
+  // === Quick Login (Device-Bound Session) ===
+  display_name       String?   @db.VarChar(100) // Tên hiển thị: "Ông Năm", "Bé An"
+  quick_device_hash  String?   @db.VarChar(255) // Hash của device_token cho quick login
+  device_fingerprint String?   @db.VarChar(255) // Fingerprint thiết bị được gán
+  device_name        String?   @db.VarChar(100) // "iPhone của Ông Năm"
+  quick_login_at     DateTime? // Lần quick-login gần nhất
+
 
   // Khóa ngoại
-  family        Family     @relation(fields: [family_id], references: [id], onDelete: Cascade)
-  user          User?      @relation(fields: [user_id], references: [id], onDelete: SetNull)
+  family Family @relation(fields: [family_id], references: [id], onDelete: Cascade)
+  user   User?  @relation(fields: [user_id], references: [id], onDelete: SetNull)
+
+  quickLoginDevice QuickLoginDevice?
 
   quickLoginDevice QuickLoginDevice?
 
@@ -92,13 +101,13 @@ model FamilyMember {
 }
 
 model QuickLoginDevice {
-  id                 String   @id @default(uuid())
-  member_id          String   @unique // Đảm bảo 1 member chỉ có 1 thiết bị active
-  device_hash        String   @db.VarChar(255)
-  device_fingerprint String   @unique @db.VarChar(255) // Đảm bảo 1 thiết bị chỉ gán cho 1 người (vật lý)
-  device_name        String?  @db.VarChar(100)
+  id                 String    @id @default(uuid())
+  member_id          String    @unique // Đảm bảo 1 member chỉ có 1 thiết bị active
+  device_hash        String    @db.VarChar(255)
+  device_fingerprint String    @unique @db.VarChar(255) // Đảm bảo 1 thiết bị chỉ gán cho 1 người (vật lý)
+  device_name        String?   @db.VarChar(100)
   last_login_at      DateTime?
-  created_at         DateTime @default(now())
+  created_at         DateTime  @default(now())
 
-  familyMember       FamilyMember @relation(fields: [member_id], references: [id], onDelete: Cascade)
+  familyMember FamilyMember @relation(fields: [member_id], references: [id], onDelete: Cascade)
 }
