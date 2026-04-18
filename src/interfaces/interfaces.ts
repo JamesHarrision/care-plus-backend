@@ -10,6 +10,7 @@ export interface JwtPayLoad {
 export interface QuickLoginPayload {
   memberId: string;
   familyId: string;
+  deviceId: string;
   loginType: 'quick_login';
 }
 
@@ -23,6 +24,7 @@ export interface AuthRequest extends Request {
   quickLoginMember?: {
     memberId: string;
     familyId: string;
+    deviceId: string;
   }
 }
 

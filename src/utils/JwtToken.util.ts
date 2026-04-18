@@ -18,7 +18,12 @@ export const TokenUtil = {
 
   // Tạo token cho quick-login session (Device-Bound)
   generateQuickLoginToken: (payload: QuickLoginPayload) => {
-    const tokenPayload = { memberId: payload.memberId, familyId: payload.familyId, loginType: 'quick_login' as const };
+    const tokenPayload = {
+      memberId: payload.memberId,
+      familyId: payload.familyId,
+      deviceId: payload.deviceId,
+      loginType: 'quick_login' as const,
+    };
     return {
       accessToken: jwt.sign(tokenPayload, ACCESS_SECRET as string, { expiresIn: JWT_ACCESS_EXPIRES_IN }),
       refreshToken: jwt.sign(tokenPayload, REFRESH_SECRET as string, { expiresIn: JWT_REFRESH_EXPIRES_IN }),

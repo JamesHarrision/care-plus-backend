@@ -141,12 +141,12 @@ export const familyService = {
   async getFamilyDevices(familyId: string) {
     const devices = await familyRepository.getDevicesByFamily(familyId);
     return devices.map(d => ({
-      member_id: d.id,
-      display_name: d.display_name,
+      member_id: d.member_id,
+      display_name: d.familyMember.display_name,
       device_name: d.device_name,
-      avatar_url: d.avatar_url,
-      family_relation: d.family_relation,
-      quick_login_at: d.quick_login_at,
+      avatar_url: d.familyMember.avatar_url,
+      family_relation: d.familyMember.family_relation,
+      quick_login_at: d.last_login_at,
     }));
   },
   async createGuestMember(familyId: string, displayName: string, relation?: string) {
