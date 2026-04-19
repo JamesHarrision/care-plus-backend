@@ -40,7 +40,7 @@ async function resolveFamilyRole(
   }
 
   // Kiểm tra requesting user có thuộc cùng family không
-  const userMember = await familyRepository.findFamilyMember(targetMember.family_id, req.user.id);
+  const userMember = await familyRepository.findFamilyMember(targetMember.family.id, req.user.id);
   if (!userMember) {
     return { error: { status: 403, message: 'Bạn không phải là thành viên của gia đình này' } };
   }
@@ -85,6 +85,7 @@ export const healthRecordController = {
       }
 
       const record = await healthRecordService.createRecord({
+        account_id: req.user ? req.user.id : null, // fallback khi ko dung id của quick login
         family_member_id: memberId as string,
         updated_by_user_id: updatedByUserId,
         type,
@@ -104,12 +105,24 @@ export const healthRecordController = {
     try {
       const { memberId, recordId } = req.params;
       const { value, unit, note } = req.body;
+      const changedByWho = req.user?.id;
 
+      console.log('DEBUG ::: changeBy:', changedByWho, 'recordId:', recordId, 'memberId:', memberId);
+
+      /**
+       * Lưu ý:
+       * - Chủ của thông tin sức khỏe: memberId trong params
+       * - Người thực hiện request: req.user (normal user) hoặc req.quickLoginMember (quick-login member)
+       * - Hai người này có thể trùng hoặc khác nhau tùy tình huống.
+       *
+       * - Ở đây kiểm tra cho phép với người thực hiện request dựa trên role của họ, không phải là memberId trong params.
+       *
+       */
       const result = await resolveFamilyRole(req, memberId as string);
+      console.log('Resolved role:', result);
       if ('error' in result) {
         return res.status(result.error.status).json({ status: 'error', message: result.error.message });
       }
-
       const record = await healthRecordService.updateRecord(recordId as string, result.role, { value, unit, note });
 
       res.status(200).json({ status: 'success', data: { record } });

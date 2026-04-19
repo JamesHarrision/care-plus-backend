@@ -1,6 +1,7 @@
 import mongoose, { Schema, Document } from 'mongoose';
 
 export interface IHealthRecord extends Document {
+  account_id?: string; // fallback khi ko dung id của quick login
   family_member_id: string;
   // family_id: string;
   updated_by_user_id: string;
@@ -14,6 +15,7 @@ export interface IHealthRecord extends Document {
 
 const HealthRecordSchema: Schema = new Schema(
   {
+    account_id: { type: String, required: false, index: true }, // fallback khi ko dung id của quick login
     family_member_id: { type: String, required: true, index: true },
     // family_id: { type: String, required: true, index: true },
     updated_by_user_id: { type: String, required: true },

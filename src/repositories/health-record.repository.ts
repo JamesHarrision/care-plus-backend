@@ -3,7 +3,7 @@ import HealthRecord from '../models/health-record.model';
 
 export const healthRecordRepository = {
   async findMany(familyMemberId: string, filters: { date?: string; type?: string }) {
-    const query: Record<string, any> = { family_member_id: familyMemberId };
+    const query: Record<string, any> = { $or: [{ family_member_id: familyMemberId }, { account_id: familyMemberId }] };
 
     if (filters.type) {
       query.type = filters.type;
