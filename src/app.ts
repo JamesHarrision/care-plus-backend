@@ -57,8 +57,8 @@ app.get('/', async (req, res) => {
   });
 });
 
+app.set('trust proxy', 1);
 startSwagger(app);
-
 app.use('/api/auth', authRoutes);
 app.use('/api/family', familyRoutes);
 app.use('/api/user', userRoutes);

@@ -1,31 +1,82 @@
-version: '3.8'
+# docker network create proxy
 
 services:
+  traefik:
+    image: traefik:v2.9
+    container_name: careplus_traefik
+    command:
+      - '--api.insecure=true'
+      - '--providers.docker=true'
+      - '--providers.docker.network=proxy'
+      - '--providers.docker.exposedbydefault=false'
+      - '--entrypoints.web.address=:80'
+      - '--api.dashboard=false' # Specifically disables the dashboard
+      - '--api.insecure=false' # Disables the insecure API endpoint
+    ports:
+      - '80:80'
+      - '8080:8080' # Traefik Dashboard
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    networks:
+      - proxy
+
   redis:
     image: redis:7-alpine
     container_name: careplus_redis
     ports:
-      - "6379:6379"
+      - '6379:6379'
     restart: always
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
     container_name: careplus_rabbitmq
     ports:
-      - "5672:5672" # AMQP
-      - "15672:15672" # Management UI
+      - '5672:5672' # AMQP
+      - '15672:15672' # Management UI
     restart: always
     environment:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'traefik.http.routers.rabbitmq.rule=Host(`mq.ayatollah.site`)'
+      - 'traefik.http.routers.rabbitmq.entrypoints=web'
+      - 'traefik.http.routers.rabbitmq.service=rabbitmq'
+      - 'traefik.http.services.rabbitmq.loadbalancer.server.port=15672'
+    networks:
+      - proxy
+
+  frontend:
+    build:
+      context: ./bundled-frontend
+      dockerfile: Dockerfile
+    image: 'shinsouhitoshi1203/careplus_frontend:latest'
+    container_name: careplus_frontend
+    # env_file:
+    #   - .env.docker
+    restart: always
+    environment:
+      - TZ=Asia/Ho_Chi_Minh
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'traefik.http.routers.frontend.rule=Host(`web.ayatollah.site`)'
+      - 'traefik.http.routers.frontend.entrypoints=web'
+      - 'traefik.http.routers.frontend.service=frontend'
+      - 'traefik.http.services.frontend.loadbalancer.server.port=80'
+    networks:
+      - default
+      - proxy
 
   backend:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: careplus_backend
-    ports:
-      - "8080:8080"
+    image: 'shinsouhitoshi1203/careplus_backend:latest'
+
     env_file:
       - .env.docker
     depends_on:
@@ -34,3 +85,17 @@ services:
     restart: always
     environment:
       - TZ=Asia/Ho_Chi_Minh
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'traefik.http.routers.backend.rule=Host(`be.ayatollah.site`)'
+      - 'traefik.http.routers.backend.entrypoints=web'
+      - 'traefik.http.routers.backend.service=backend'
+      - 'traefik.http.services.backend.loadbalancer.server.port=8080'
+    networks:
+      - default
+      - proxy
+
+networks:
+  proxy:
+    name: proxy
