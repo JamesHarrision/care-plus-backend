@@ -39,7 +39,41 @@ export const startNotificationWorker = async () => {
                 await Promise.all(sendPromises);
               }
             }
-          } else {
+          } else if (type === 'EMERGENCY_SOS') {
+            const { senderId, senderName, familyIds, location } = payload;
+            
+            console.log(`[WORKER] Đã nhận tín hiệu KÊU CỨU (SOS) từ ${senderName}! (senderId: ${senderId}, families: ${familyIds.join(', ')})`);
+
+            const members = await prisma.familyMember.findMany({
+              where: {
+                 family_id: { in: familyIds } 
+              }
+            });
+
+            // Lọc ra các device token, loại trừ senderId nếu cần thiết, nhưng an toàn nhất là push hết cho những ai có token và không phải là người gửi
+            const tokens = [...new Set(members
+               .filter(m => m.id !== senderId && m.user_id !== senderId) // Exclude the sender
+               .map(m => m.device_token).filter(Boolean))] as string[];
+
+            if (tokens.length > 0) {
+              const title = '🚨 KHẨN CẤP / SOS! 🚨';
+              const body = `${senderName} đang cần sự trợ giúp ngay lập tức!`;
+              const dataToPush: any = {
+                type: 'EMERGENCY_SOS',
+                senderId: senderId,
+              };
+              if (location) {
+                 dataToPush.latitude = location.latitude?.toString();
+                 dataToPush.longitude = location.longitude?.toString();
+              }
+
+              const sendPromises = tokens.map(token => 
+                sendPushNotification(token, title, body, dataToPush)
+              );
+
+              await Promise.all(sendPromises);
+            }
+          } else if (type === 'JOIN_RESULT') {
             // 2. Phía Người dùng: Gửi thông báo kết quả duyệt gia đình (JOIN_RESULT hoặc cũ)
             const members = await prisma.familyMember.findMany({
               where: { user_id: userId },

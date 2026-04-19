@@ -2,6 +2,7 @@ import { Request, Response } from "express";
 import { familyService } from "../services/family.service";
 import { authService } from "../services/auth.service";
 import { AuthRequest } from "../interfaces/interfaces";
+import { userRepository } from "../repositories/user.repository";
 
 export class FamilyController {
   public createFamily = async (req: AuthRequest, res: Response) => {
@@ -193,6 +194,47 @@ export class FamilyController {
       res.status(201).json({ status: "success", data: { member } });
     } catch (error) {
       console.error('Lỗi khi tạo thành viên phụ:', error);
+      res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
+    }
+  }
+
+  public sendSOS = async (req: AuthRequest, res: Response) => {
+    try {
+      const { latitude, longitude } = req.body;
+
+      let families = [];
+      let senderId = '';
+      let senderName = '';
+
+      if (req.quickLoginMember) {
+        families = await familyService.getQuickLoginFamilies(req.quickLoginMember.memberId);
+        senderId = req.quickLoginMember.memberId;
+        const members = await familyService.getFamilyMembers(families[0]?.family_id);
+        const member = members.find(m => m.member_id === senderId);
+        senderName = member?.full_name || 'Một thành viên';
+      } else {
+        const userId = req.user?.id;
+        if (!userId) {
+          return res.status(401).json({ status: 'error', message: 'Unauthorized' });
+        }
+        families = await familyService.getUserFamilies(userId);
+        senderId = userId;
+        
+        const userRec = await userRepository.findById(userId);
+        senderName = userRec?.full_name || 'Một thành viên';
+      }
+
+      if (!families || families.length === 0) {
+        return res.status(400).json({ status: 'error', message: 'Bạn chưa tham gia gia đình nào' });
+      }
+
+      const familyIds = families.map((f: any) => f.family_id || f.id);
+
+      await familyService.triggerSOS(senderId, senderName, familyIds, { latitude, longitude });
+
+      res.status(200).json({ status: 'success', data: { message: 'Đã phát tín hiệu SOS tới gia đình' } });
+    } catch (error) {
+      console.error('Lỗi khi phát tín hiệu SOS:', error);
       res.status(500).json({ status: 'error', message: 'Lỗi máy chủ' });
     }
   }

@@ -4,7 +4,7 @@ export const initializeFirebaseAdmin = () => {
   if (!admin.apps.length) {
     try {
       const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-      
+
       // Nếu thiếu cấu hình thì skip không khởi tạo Firebase để tránh crash app
       if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
         console.warn('⚠️ Thiếu biến môi trường Firebase (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY). Đang skip.');
@@ -29,12 +29,12 @@ export const sendPushNotification = async (token: string, title: string, body: s
   try {
     // Khởi tạo admin nếu chưa
     if (!admin.apps.length) {
-       initializeFirebaseAdmin();
+      initializeFirebaseAdmin();
     }
-    
+
     if (!admin.apps.length) {
-       console.warn('⚠️ Firebase Admin chưa được khởi tạo. Không thể gửi push notification.');
-       return;
+      console.warn('⚠️ Firebase Admin chưa được khởi tạo. Không thể gửi push notification.');
+      return;
     }
 
     const payload = {

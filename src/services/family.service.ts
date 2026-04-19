@@ -152,4 +152,23 @@ export const familyService = {
   async createGuestMember(familyId: string, displayName: string, relation?: string) {
     return await familyRepository.createGuestMember(familyId, displayName, relation);
   },
+
+  async triggerSOS(senderId: string, senderName: string, familyIds: string[], location?: { latitude: number, longitude: number }) {
+    try {
+      const { getChannel } = await import('../config/rabbitmq.config');
+      getChannel().sendToQueue(
+        'notifications.family',
+        Buffer.from(JSON.stringify({
+          type: 'EMERGENCY_SOS',
+          senderId,
+          senderName,
+          familyIds,
+          location
+        }))
+      );
+    } catch (err) {
+      console.error('RabbitMQ publish error (SOS):', err);
+      throw err;
+    }
+  }
 };

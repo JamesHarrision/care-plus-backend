@@ -935,6 +935,39 @@ router.get(
   familyController.getFamilyDevices,
 );
 
+/**
+ * @openapi
+ * /api/family/sos:
+ *   post:
+ *     tags:
+ *       - Family
+ *     summary: Phát tín hiệu cầu cứu SOS
+ *     description: Gửi thông báo khẩn cấp tới tất cả thành viên trong các gia đình mà người dùng tham gia.
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: false
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               latitude:
+ *                 type: number
+ *                 description: Vĩ độ hiện tại
+ *               longitude:
+ *                 type: number
+ *                 description: Kinh độ hiện tại
+ *     responses:
+ *       '200':
+ *         description: Đã phát tín hiệu SOS thành công
+ *       '401':
+ *         description: Unauthorized
+ *       '500':
+ *         description: Lỗi máy chủ
+ */
+router.post('/sos', requireAuth, familyController.sendSOS);
+
 router.use('/:familyId/members/:memberId/medications', medicationRoutes);
 
 // Tách
