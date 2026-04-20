@@ -12,7 +12,7 @@ const router = Router();
  *     tags:
  *       - User
  *     summary: Get current user
- *     description: Returns the authenticated user's merged profile data, including the token role and the latest database record.
+ *     description: Returns the authenticated user's profile data. Normal accounts receive the latest user record, while quick-login members receive the linked family-member profile.
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -30,31 +30,113 @@ const router = Router();
  *                   type: string
  *                   example: success
  *                 data:
- *                   $ref: '#/components/schemas/UserMeProfile'
- *             example:
- *               status: success
- *               data:
- *                 id: 6f2d0c6a-7d1f-4bc3-9a80-1ed1fd5b3333
- *                 role: USER
- *                 full_name: Nguyen Van A
- *                 phone: '0912345678'
- *                 email: nguyenvana@example.com
- *                 system_role: USER
- *                 is_active: true
- *                 created_at: '2026-04-10T00:00:00.000Z'
- *                 updated_at: '2026-04-10T00:00:00.000Z'
- *                 family:
- *                   - family_id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
- *                     family_role: OWNER
- *                     family_relation: null
+ *                   type: object
+ *                   required:
+ *                     - id
+ *                     - full_name
+ *                     - system_role
+ *                     - is_active
+ *                     - created_at
+ *                     - family
+ *                     - loginType
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                       format: uuid
+ *                     role:
+ *                       type: string
+ *                       enum:
+ *                         - ADMIN
+ *                         - USER
+ *                       description: Present for normal accounts.
+ *                     full_name:
+ *                       type: string
+ *                     phone:
+ *                       type: string
+ *                       nullable: true
+ *                     email:
+ *                       type: string
+ *                       format: email
+ *                       nullable: true
+ *                     system_role:
+ *                       type: string
+ *                       enum:
+ *                         - ADMIN
+ *                         - USER
+ *                     is_active:
+ *                       type: boolean
+ *                     avatar_url:
+ *                       type: string
+ *                       nullable: true
+ *                     created_at:
+ *                       type: string
+ *                       format: date-time
+ *                     updated_at:
+ *                       type: string
+ *                       format: date-time
+ *                       nullable: true
  *                     family:
- *                       id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
- *                       name: Gia đình Nguyễn Văn A
- *                       address: 123 Đường ABC, TP.HCM
- *                       invite_code: null
- *                       invite_code_exp: null
- *                       created_at: '2026-04-10T00:00:00.000Z'
- *                       updated_at: '2026-04-10T00:00:00.000Z'
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/UserMeFamily'
+ *                     loginType:
+ *                       type: string
+ *                       enum:
+ *                         - full
+ *                         - quick_login
+ *             examples:
+ *               regularUser:
+ *                 value:
+ *                   status: success
+ *                   data:
+ *                     id: 6f2d0c6a-7d1f-4bc3-9a80-1ed1fd5b3333
+ *                     role: USER
+ *                     full_name: Nguyen Van A
+ *                     phone: '0912345678'
+ *                     email: nguyenvana@example.com
+ *                     system_role: USER
+ *                     is_active: true
+ *                     avatar_url: null
+ *                     created_at: '2026-04-10T00:00:00.000Z'
+ *                     updated_at: '2026-04-10T00:00:00.000Z'
+ *                     family:
+ *                       - family_id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
+ *                         family_role: OWNER
+ *                         family_relation: null
+ *                         family:
+ *                           id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
+ *                           name: Gia đình Nguyễn Văn A
+ *                           address: 123 Đường ABC, TP.HCM
+ *                           invite_code: null
+ *                           invite_code_exp: null
+ *                           created_at: '2026-04-10T00:00:00.000Z'
+ *                           updated_at: '2026-04-10T00:00:00.000Z'
+ *                     loginType: full
+ *               quickLoginMember:
+ *                 value:
+ *                   status: success
+ *                   data:
+ *                     id: 6f2d0c6a-7d1f-4bc3-9a80-1ed1fd5b4444
+ *                     full_name: Thành viên gia đình
+ *                     phone: null
+ *                     email: null
+ *                     system_role: USER
+ *                     is_active: true
+ *                     avatar_url: https://example.com/avatar.png
+ *                     created_at: '2026-04-10T00:00:00.000Z'
+ *                     family:
+ *                       - family_id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
+ *                         family_role: MEMBER
+ *                         family_relation: CON
+ *                         family:
+ *                           id: 8c8f0df7-1e1f-4e5f-8b98-f6f5d7c8f111
+ *                           name: Gia đình Nguyễn Văn A
+ *                           address: 123 Đường ABC, TP.HCM
+ *                           invite_code: null
+ *                           invite_code_exp: null
+ *                           created_at: '2026-04-10T00:00:00.000Z'
+ *                           updated_at: '2026-04-10T00:00:00.000Z'
+ *                     loginType: quick_login
  *       '401':
  *         description: Missing or invalid access token.
  *         content:
@@ -65,7 +147,7 @@ const router = Router();
  *               status: error
  *               message: Token không hợp lệ hoặc đã hết hạn
  *       '404':
- *         description: User account not found.
+ *         description: User account or family member not found.
  *         content:
  *           application/json:
  *             schema:

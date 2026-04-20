@@ -15,6 +15,7 @@ export const healthRecordService = {
   },
 
   async createRecord(data: {
+    account_id: string | null; // fallback khi ko dung id của quick login
     family_member_id: string;
     // family_id: string;
     updated_by_user_id: string;
