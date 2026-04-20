@@ -1,4 +1,5 @@
 # docker network create proxy
+# docker compose up -d --build --force-recreate
 
 services:
   traefik:
@@ -27,6 +28,13 @@ services:
     ports:
       - '6379:6379'
     restart: always
+    labels:
+      - 'traefik.enable=true'
+      - 'traefik.docker.network=proxy'
+      - 'traefik.http.routers.redis.service=redis'
+      - 'traefik.http.services.redis.loadbalancer.server.port=6379'
+    networks:
+      - proxy
 
   rabbitmq:
     image: rabbitmq:3-management-alpine
@@ -41,17 +49,19 @@ services:
     labels:
       - 'traefik.enable=true'
       - 'traefik.docker.network=proxy'
-      - 'traefik.http.routers.rabbitmq.rule=Host(`mq.ayatollah.site`)'
-      - 'traefik.http.routers.rabbitmq.entrypoints=web'
       - 'traefik.http.routers.rabbitmq.service=rabbitmq'
       - 'traefik.http.services.rabbitmq.loadbalancer.server.port=15672'
+      - 'traefik.http.services.rabbitmq.loadbalancer.server.port=5672'
+    healthcheck:
+      test: ['CMD', 'rabbitmq-diagnostics', '-q', 'ping']
+      interval: 5s # Check more frequently at start
+      timeout: 5s
+      retries: 10 # Give it enough time to boot
+      start_period: 10s # Wait 10s before starting checks to save CPU
     networks:
       - proxy
 
   frontend:
-    build:
-      context: ./bundled-frontend
-      dockerfile: Dockerfile
     image: 'shinsouhitoshi1203/careplus_frontend:latest'
     container_name: careplus_frontend
     # env_file:
@@ -71,17 +81,18 @@ services:
       - proxy
 
   backend:
-    build:
-      context: .
-      dockerfile: Dockerfile
     container_name: careplus_backend
     image: 'shinsouhitoshi1203/careplus_backend:latest'
-
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile
     env_file:
       - .env.docker
     depends_on:
-      - redis
-      - rabbitmq
+      redis:
+        condition: service_started
+      rabbitmq:
+        condition: service_healthy
     restart: always
     environment:
       - TZ=Asia/Ho_Chi_Minh
@@ -99,3 +110,4 @@ services:
 networks:
   proxy:
     name: proxy
+    external: true
