@@ -1,3 +1,8 @@
+> **🧭 Điều hướng dự án:**
+>
+> - 📱 [**Frontend Repository (Hiện tại)**](https://github.com/shinsouhitoshi1203/care-plus-frontend)
+> - ⚙️ [**Backend Repository (Care Plus Backend)**](https://github.com/JamesHarrision/care-plus-backend)
+
 # Care Plus Backend
 
 Đây là repository backend cho dự án **Care Plus**. Hệ thống backend này cung cấp các API để quản lý hồ sơ sức khỏe, thông tin y tế, xác thực người dùng, và tích hợp các tính năng khẩn cấp (SOS) kèm theo hệ thống gửi thông báo thời gian thực.
