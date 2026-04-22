@@ -14,7 +14,7 @@ type UpsertEmergencyInfoInput = {
 };
 
 const QUICK_ACCESS_TTL_SECONDS = 86400;
-const QUICK_ACCESS_BASE_URL = "https://careplus.app/user/quick";
+const QUICK_ACCESS_BASE_URL = process.env.FE_URL ?? "http://localhost:8081";
 
 export const emergencyInfoService = {
   async upsertEmergencyInfo(
@@ -31,7 +31,7 @@ export const emergencyInfoService = {
     }
 
     const publicId = uuidv4();
-    const quickAccessUrl = `${QUICK_ACCESS_BASE_URL}/${publicId}`;
+    const quickAccessUrl = `${QUICK_ACCESS_BASE_URL}/emergency/?id=${publicId}`;
 
     await emergencyInfoRepository.saveQuickAccessPublicId(
       publicId,
